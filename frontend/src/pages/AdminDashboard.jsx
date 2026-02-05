@@ -212,7 +212,7 @@ export default function AdminDashboard() {
             if (!av.enabled) {
                 style = { backgroundColor: 'rgba(239, 68, 68, 0.2)' }; // Red-ish for disabled
             } else {
-                style = { backgroundColor: 'rgba(255, 255, 255, 0.05)' }; // Subtle for active
+                style = { backgroundColor: 'rgba(16, 185, 129, 0.2)' }; // Green for custom schedule
             }
         }
         return { style };
