@@ -87,7 +87,13 @@ button {
 
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 2rem;
+  align-items: center;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .nav-link {
@@ -615,9 +621,17 @@ table td {
 
   .nav-links {
     width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .nav-menu {
+    width: 100%;
     justify-content: center;
     gap: 0.5rem;
     flex-wrap: wrap;
+    display: flex;
   }
 
   .nav-link {
@@ -639,17 +653,18 @@ table td {
   }
 
   .btn-logout {
-    padding: 0.5rem 0.75rem !important;
-    background: rgba(239, 68, 68, 0.1) !important;
+    padding: 0.6rem 0.75rem !important;
+    background: rgba(239, 68, 68, 0.15) !important;
     border: 1px solid var(--danger) !important;
     color: var(--danger) !important;
     border-radius: 4px !important;
-    font-size: 0.75rem !important;
+    font-size: 0.85rem !important;
     text-transform: uppercase;
-    letter-spacing: 1px !important;
-    min-width: 80px;
+    letter-spacing: 2px !important;
     text-align: center;
-    margin-top: 0 !important;
+    margin-top: 1rem !important;
+    width: 100%;
+    max-width: 280px;
   }
 
   .main-content {

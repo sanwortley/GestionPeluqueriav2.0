@@ -23,11 +23,13 @@ export default function Layout({ children }) {
                 <div className="nav-links">
                     {token && (
                         <>
-                            <Link to="/admin/dashboard" className={`nav-link ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}>Turnos</Link>
-                            <Link to="/admin/services" className={`nav-link ${location.pathname === '/admin/services' ? 'active' : ''}`}>Servicios</Link>
-                            <Link to="/admin/blocks" className={`nav-link ${location.pathname === '/admin/blocks' ? 'active' : ''}`}>Bloqueos</Link>
-                            <Link to="/admin/history" className={`nav-link ${location.pathname === '/admin/history' ? 'active' : ''}`}>Historial</Link>
-                            <Link to="/admin/clients" className={`nav-link ${location.pathname === '/admin/clients' ? 'active' : ''}`}>Clientes</Link>
+                            <div className="nav-menu">
+                                <Link to="/admin/dashboard" className={`nav-link ${location.pathname === '/admin/dashboard' ? 'active' : ''}`}>Turnos</Link>
+                                <Link to="/admin/services" className={`nav-link ${location.pathname === '/admin/services' ? 'active' : ''}`}>Servicios</Link>
+                                <Link to="/admin/blocks" className={`nav-link ${location.pathname === '/admin/blocks' ? 'active' : ''}`}>Bloqueos</Link>
+                                <Link to="/admin/history" className={`nav-link ${location.pathname === '/admin/history' ? 'active' : ''}`}>Historial</Link>
+                                <Link to="/admin/clients" className={`nav-link ${location.pathname === '/admin/clients' ? 'active' : ''}`}>Clientes</Link>
+                            </div>
                             <button onClick={handleLogout} className="btn btn-secondary btn-logout">
                                 <span className="logout-text">Cerrar Sesión</span>
                             </button>
