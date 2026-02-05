@@ -1,26 +1,44 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 export default function Layout({ children }) {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isOpen, setIsOpen] = useState(false);
     const token = localStorage.getItem('token');
+
+    // Close menu when location changes
+    useEffect(() => {
+        setIsOpen(false);
+    }, [location]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         navigate('/admin/login');
     };
 
-    const isClient = location.pathname.startsWith('/reservar');
-    const isAdmin = location.pathname.startsWith('/admin');
-    // Simple check
+    const toggleMenu = () => setIsOpen(!isOpen);
 
     return (
         <div className="app-container">
             <nav className="navbar">
-                <Link to="/" className="navbar-brand-container">
-                    <span className="navbar-brand">ROMA CABELLO</span>
-                </Link>
-                <div className="nav-links">
+                <div className="navbar-top">
+                    <Link to="/" className="navbar-brand-container">
+                        <span className="navbar-brand">ROMA CABELLO</span>
+                    </Link>
+
+                    {token && (
+                        <button className="menu-toggle" onClick={toggleMenu} aria-label="Menu">
+                            <div className={`hamburger ${isOpen ? 'open' : ''}`}>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </button>
+                    )}
+                </div>
+
+                <div className={`nav-links ${isOpen ? 'open' : ''}`}>
                     {token && (
                         <>
                             <div className="nav-menu">
