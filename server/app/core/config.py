@@ -27,7 +27,18 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings():
     settings = Settings()
-    settings.DATABASE_URL = settings.get_database_url()
+    
+    # Priority: Env Var DATABASE_URL > Constructed URL
+    import os
+    env_url = os.getenv("DATABASE_URL")
+    if env_url:
+        # Fix for Render (postgres:// -> postgresql://)
+        if env_url.startswith("postgres://"):
+            env_url = env_url.replace("postgres://", "postgresql://", 1)
+        settings.DATABASE_URL = env_url
+    elif not settings.DATABASE_URL:
+        settings.DATABASE_URL = settings.get_database_url()
+        
     return settings
 
 settings = get_settings()
