@@ -29,13 +29,11 @@ services:
         value: 3.11.0
 
   # FRONTEND SERVICE
-  - type: web
+  - type: static
     name: roma-cabello-frontend
-    env: static
-    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    publishDir: dist
     routes:
       - type: rewrite
         source: /*
