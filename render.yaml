@@ -1,5 +1,5 @@
 databases:
-  - name: roma_hair_db
+  - name: roma_hair_prod
     databaseName: roma_hair
     user: roma_user
     plan: free # Advertencia: Expira en 90 días. Cambiar a 'starter' para prod real.
@@ -17,7 +17,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: roma_hair_db
+          name: roma_hair_prod
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
