@@ -33,17 +33,16 @@ services:
     name: roma-cabello-frontend
     env: static
     plan: free
-    region: oregon
     rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: dist # Correct key for static sites
+    staticPublishPath: dist
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
-      - key: VITE_API_URL
+      - key: VITE_API_URL_HOST
         fromService:
           type: web
           name: roma-cabello-backend
-          property: url
+          property: host
