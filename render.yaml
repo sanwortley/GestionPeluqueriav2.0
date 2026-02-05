@@ -29,12 +29,14 @@ services:
         value: 3.11.0
 
   # FRONTEND SERVICE
-  - type: static
+  - type: web
     name: roma-cabello-frontend
     env: static
+    plan: free
+    region: oregon
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishPath: dist # Correct key for static sites
     routes:
       - type: rewrite
         source: /*
@@ -45,4 +47,3 @@ services:
           type: web
           name: roma-cabello-backend
           property: url
-          envVarKey: VITE_API_URL # Map backend URL to this var
