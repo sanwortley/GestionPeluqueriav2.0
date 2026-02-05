@@ -72,7 +72,8 @@ export default function ClientBooking() {
                     staff_id: selectedStaff ? selectedStaff.id : undefined
                 }
             });
-            setSlots(res.data);
+            const sortedSlots = res.data.sort((a, b) => a.start_time.localeCompare(b.start_time));
+            setSlots(sortedSlots);
         } catch (err) {
             setError('Error al cargar turnos');
         } finally {

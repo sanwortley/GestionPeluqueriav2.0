@@ -102,7 +102,7 @@ export default function AdminDashboard() {
         if (av) {
             setEnabled(av.enabled);
             setSlotSize(av.slot_size_min);
-            setRanges(av.ranges);
+            setRanges(av.ranges.sort((a, b) => a.start_time.localeCompare(b.start_time)));
         } else {
             // New days start disabled and empty as per clean cleanup request
             setEnabled(false);
