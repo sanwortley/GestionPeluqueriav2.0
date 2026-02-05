@@ -1,0 +1,915 @@
+:root {
+  --bg-color: #000000;
+  --card-bg: #111111;
+  --primary: #ffffff;
+  --primary-hover: #e0e0e0;
+  --secondary: #222222;
+  --text-main: #ffffff;
+  --text-muted: #999999;
+  --border: #444444;
+  --glass: rgba(0, 0, 0, 0.95);
+  --success: #ffffff;
+  --danger: #ff4444;
+  --accent: #333333;
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+    linear-gradient(rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0.98));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+/* Layout */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-brand-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+}
+
+.nav-logo {
+  height: 80px;
+  width: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--primary);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s ease;
+  object-fit: cover;
+}
+
+.nav-logo:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.navbar-brand {
+  font-family: 'Staatliches', cursive;
+  font-size: 2.8rem;
+  letter-spacing: 6px;
+  color: var(--primary);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-link {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--text-main);
+}
+
+.main-content {
+  flex: 1;
+  padding: 3rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Professional Tables */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+}
+
+table th {
+  background: #111;
+  color: var(--primary);
+  font-family: 'Staatliches', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 1.2rem 1rem !important;
+  font-size: 1.1rem;
+  font-weight: normal;
+  border-bottom: 2px solid var(--primary);
+  text-align: left;
+}
+
+table tbody tr {
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+}
+
+table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+table td {
+  padding: 1.5rem 1rem !important;
+  color: #fff;
+  vertical-align: middle;
+}
+
+/* Row separation for different days */
+.new-day-row {
+  border-top: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Components */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #000;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: scale(1.02);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-logout {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-logout:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Decorative Barber Pole */
+.barber-pole-border {
+  height: 8px;
+  background: repeating-linear-gradient(45deg,
+      #8b0000,
+      #8b0000 10px,
+      #f5f5f5 10px,
+      #f5f5f5 20px,
+      #00008b 20px,
+      #00008b 30px,
+      #f5f5f5 30px,
+      #f5f5f5 40px);
+  width: 100%;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 4px;
+  padding: 1.5rem;
+  border: 1px solid #555;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary);
+}
+
+.title {
+  font-family: 'Staatliches', cursive;
+  font-size: 2.8rem;
+  margin-bottom: 2rem;
+  color: var(--primary);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  color: #dcdcdc;
+  margin-bottom: 1.5rem;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.input {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 4px;
+  background: #000000;
+  border: 1px solid var(--border);
+  color: white;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 1px #ffffff;
+}
+
+/* Calendar Overrides */
+.rbc-calendar {
+  height: 600px;
+  background: transparent;
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+}
+
+.rbc-toolbar {
+  margin-bottom: 2.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.5rem !important;
+  align-items: center !important;
+}
+
+@media (min-width: 992px) {
+  .rbc-toolbar {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+  }
+}
+
+.rbc-toolbar-label {
+  font-family: 'Staatliches', cursive !important;
+  font-size: 2.2rem !important;
+  letter-spacing: 4px !important;
+  color: var(--primary) !important;
+  text-transform: uppercase !important;
+  margin: 0 !important;
+  padding: 0 1rem !important;
+  text-align: center !important;
+  order: 2;
+}
+
+@media (min-width: 992px) {
+  .rbc-toolbar-label {
+    order: 2;
+  }
+
+  .rbc-toolbar .rbc-btn-group:first-child {
+    order: 1;
+  }
+
+  .rbc-toolbar .rbc-btn-group:last-child {
+    order: 3;
+  }
+}
+
+.rbc-btn-group {
+  display: flex !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding: 4px !important;
+  border-radius: 8px !important;
+  border: 1px solid #333 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.rbc-btn-group button {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+  font-family: 'Staatliches', sans-serif !important;
+  letter-spacing: 2px !important;
+  padding: 0.6rem 1.2rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+  text-transform: uppercase !important;
+  font-size: 0.9rem !important;
+  border-radius: 6px !important;
+}
+
+.rbc-btn-group button:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.rbc-btn-group button.rbc-active {
+  background: #fff !important;
+  color: #000 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Specific styling for the navigation group (Today, Back, Next) */
+.rbc-toolbar .rbc-btn-group:first-child {
+  background: transparent !important;
+  border: none !important;
+  gap: 0.5rem !important;
+  box-shadow: none !important;
+}
+
+.rbc-toolbar .rbc-btn-group:first-child button {
+  background: #111 !important;
+  border: 1px solid #333 !important;
+  color: #fff !important;
+  border-radius: 4px !important;
+}
+
+.rbc-toolbar .rbc-btn-group:first-child button:hover {
+  border-color: #666 !important;
+  background: #222 !important;
+}
+
+.rbc-header {
+  padding: 1rem 0 !important;
+  font-family: 'Staatliches', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--border) !important;
+}
+
+.rbc-month-view {
+  border: 2px solid var(--border) !important;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+}
+
+.rbc-day-bg {
+  transition: background 0.2s;
+}
+
+.rbc-day-bg:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  cursor: pointer;
+}
+
+.rbc-today {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.rbc-off-range-bg {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+.rbc-date-cell {
+  padding: 0.5rem !important;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+
+.rbc-now.rbc-date-cell {
+  color: var(--primary);
+  font-weight: bold;
+}
+
+.rbc-month-row {
+  border-bottom: 2px solid #444 !important;
+}
+
+.rbc-day-bg+.rbc-day-bg {
+  border-left: 2px solid #444 !important;
+}
+
+/* Agenda View Redesign */
+.rbc-agenda-view {
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #333 !important;
+}
+
+.rbc-agenda-view table {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
+.rbc-agenda-view table.rbc-agenda-table {
+  border: none !important;
+}
+
+.rbc-agenda-view table.rbc-agenda-table thead>tr>th {
+  background: #1a1a1a !important;
+  color: var(--primary) !important;
+  font-family: 'Staatliches', sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 2px !important;
+  padding: 1rem !important;
+  border-bottom: 2px solid var(--primary) !important;
+  font-size: 1rem !important;
+  text-align: left !important;
+}
+
+.rbc-agenda-date-cell {
+  background: rgba(255, 255, 255, 0.02) !important;
+  font-family: 'Staatliches', sans-serif !important;
+  color: var(--primary) !important;
+  font-size: 1.1rem !important;
+  padding: 1.5rem 1rem !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  vertical-align: top !important;
+  width: 150px !important;
+  text-transform: uppercase !important;
+}
+
+.rbc-agenda-time-cell {
+  padding: 1.5rem 1rem !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  width: 180px !important;
+}
+
+.rbc-agenda-event-cell {
+  padding: 1.5rem 1rem !important;
+  color: #eee !important;
+  font-weight: 500 !important;
+}
+
+.rbc-agenda-view table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: background 0.2s ease !important;
+  background: transparent !important;
+}
+
+.rbc-agenda-view table tbody tr.rbc-agenda-even-cell,
+.rbc-agenda-view table tbody tr.rbc-agenda-odd-cell {
+  background: transparent !important;
+}
+
+.rbc-agenda-view table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Day grouping differentiation */
+.rbc-agenda-date-cell+.rbc-agenda-time-cell {
+  border-top: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.rbc-agenda-view .rbc-agenda-table tbody>tr>td {
+  border-top: none !important;
+}
+
+/* Slots Grid */
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.slot-btn {
+  padding: 0.75rem;
+  border-radius: 2px;
+  background: var(--card-bg);
+  border: 2px solid #444;
+  color: var(--text-main);
+  text-align: center;
+  transition: all 0.2s;
+  font-family: 'Staatliches', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.slot-btn:hover:not(:disabled) {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.slot-btn.selected {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000;
+}
+
+.slot-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Responsive Design */
+.dashboard-grid {
+  display: flex;
+  gap: 2rem;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 992px) {
+  .dashboard-grid {
+    flex-direction: column !important;
+  }
+
+  .flex-1,
+  .flex-2 {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 1.5rem 1rem;
+    flex-direction: column;
+    gap: 1.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .nav-logo {
+    height: 60px;
+    width: 60px;
+  }
+
+  .navbar-brand {
+    font-size: 1.8rem;
+    letter-spacing: 4px;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  .nav-link.active {
+    background: var(--primary);
+    color: #000;
+    border-color: var(--primary);
+  }
+
+  .btn-logout {
+    padding: 0.5rem 0.75rem !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid var(--danger) !important;
+    color: var(--danger) !important;
+    border-radius: 4px !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase;
+    letter-spacing: 1px !important;
+    min-width: 80px;
+    text-align: center;
+    margin-top: 0 !important;
+  }
+
+  .main-content {
+    padding: 1rem 0.5rem;
+  }
+
+  .title {
+    font-size: 2rem;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+  }
+
+  .card {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Calendar Adjustments */
+  .rbc-calendar {
+    height: 450px !important;
+    font-size: 0.75rem;
+  }
+
+  .rbc-toolbar {
+    margin-bottom: 2rem !important;
+    gap: 1rem !important;
+  }
+
+  .rbc-toolbar-label {
+    font-size: 1.5rem !important;
+    width: 100%;
+    margin: 0.5rem 0 !important;
+  }
+
+  /* Client Days Grid - Keep 7 columns but scale down */
+  .days-grid {
+    gap: 4px;
+  }
+
+  .days-grid div {
+    font-size: 0.55rem !important;
+    /* Headers */
+  }
+
+  .days-grid button {
+    padding: 8px 2px !important;
+    min-height: 50px !important;
+  }
+
+  .days-grid button span:first-child {
+    font-size: 0.5rem !important;
+    /* Month label */
+  }
+
+  .days-grid button span:nth-child(2) {
+    font-size: 1rem !important;
+    /* Day number */
+  }
+
+  /* Form Stacking */
+  .flex.gap-4.items-end,
+  .flex.gap-4 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .input {
+    padding: 0.8rem;
+  }
+
+  /* Client Booking Slots */
+  .slots-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.6rem;
+  }
+
+  .slot-btn {
+    padding: 0.7rem 0.4rem;
+    font-size: 0.9rem;
+  }
+
+  /* Historial Table */
+  table th,
+  table td {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.3rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-brand {
+    font-size: 1.5rem;
+  }
+
+  .nav-links {
+    gap: 0.4rem;
+  }
+
+  .nav-link {
+    min-width: 70px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Footer */
+.footer {
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  padding: 3rem 1rem;
+  margin-top: 4rem;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer-title {
+  font-family: 'Staatliches', cursive;
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--primary);
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.social-icon i {
+  font-size: 1.8rem;
+}
+
+.social-icon.instagram:hover {
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+  border-color: transparent;
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(214, 36, 159, 0.4);
+}
+
+.social-icon.whatsapp:hover {
+  background: #25D366;
+  border-color: transparent;
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
+}
+
+.admin-footer-link {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: color 0.2s;
+  opacity: 0.6;
+}
+
+.admin-footer-link:hover {
+  color: var(--primary);
+  opacity: 1;
+}
+
+.footer-copy {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 2rem;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 2.5rem 1rem;
+    margin-top: 2rem;
+  }
+}
+
+/* Utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.grid {
+  display: grid;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-2 {
+  flex: 2;
+}

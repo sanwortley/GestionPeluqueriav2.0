@@ -1,0 +1,16 @@
+{
+    "name": "roma-cabello-fullstack",
+    "version": "1.0.0",
+    "scripts": {
+        "postinstall": "npm run install:all",
+        "install:all": "concurrently \"npm run install:client\" \"npm run install:server\"",
+        "install:client": "cd frontend && npm install",
+        "install:server": "cd server && python -m venv venv && .\\venv\\Scripts\\python -m pip install -r requirements.txt && .\\venv\\Scripts\\alembic upgrade head && .\\venv\\Scripts\\python -m app.seed.seed_admin && .\\venv\\Scripts\\python -m app.seed.seed_services",
+        "dev": "concurrently -k --names \"SERVER,CLIENT\" -c \"magenta,cyan\" \"npm run dev:server\" \"npm run dev:client\"",
+        "dev:server": "cd server && .\\venv\\Scripts\\python -m uvicorn app.main:app --reload",
+        "dev:client": "cd frontend && npm run dev"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
