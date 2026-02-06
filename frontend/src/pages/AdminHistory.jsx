@@ -85,18 +85,18 @@ export default function AdminHistory() {
                 {loading ? (
                     <p>Cargando historial...</p>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <div className="table-wrapper">
+                        <table>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                                    <th style={{ padding: '1rem 0.5rem' }}>Fecha</th>
-                                    <th style={{ padding: '1rem 0.5rem' }}>Hora</th>
-                                    <th style={{ padding: '1rem 0.5rem' }}>Cliente</th>
-                                    <th style={{ padding: '1rem 0.5rem' }}>Teléfono</th>
-                                    <th style={{ padding: '1rem 0.5rem' }}>Servicio</th>
-                                    <th style={{ padding: '1rem 0.5rem' }}>Estado</th>
-                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>Cobrado</th>
-                                    <th style={{ padding: '1rem 0.5rem' }}>Nota</th>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Teléfono</th>
+                                    <th>Servicio</th>
+                                    <th>Estado</th>
+                                    <th style={{ textAlign: 'center' }}>Cobrado</th>
+                                    <th>Nota</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -105,17 +105,17 @@ export default function AdminHistory() {
                                     const isNewDay = !prevAppt || prevAppt.date !== appt.date;
 
                                     return (
-                                        <tr key={appt.id} className={isNewDay ? 'new-day-row' : ''} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <td style={{ padding: '0.5rem', fontWeight: isNewDay ? 'bold' : 'normal', color: isNewDay ? 'var(--primary)' : 'inherit' }}>
+                                        <tr key={appt.id} className={isNewDay ? 'new-day-row' : ''}>
+                                            <td style={{ fontWeight: isNewDay ? 'bold' : 'normal', color: isNewDay ? 'var(--primary)' : 'inherit' }}>
                                                 {format(new Date(appt.date + 'T12:00:00'), 'dd/MM/yyyy')}
                                             </td>
-                                            <td style={{ padding: '0.5rem' }}>{appt.start_time}</td>
-                                            <td style={{ padding: '0.5rem' }}>
+                                            <td>{appt.start_time}</td>
+                                            <td>
                                                 <div style={{ fontWeight: 'bold' }}>{appt.client_name}</div>
                                             </td>
-                                            <td style={{ padding: '0.5rem' }}>{appt.client_phone}</td>
-                                            <td style={{ padding: '0.5rem' }}>{appt.service?.name || '-'}</td>
-                                            <td style={{ padding: '0.5rem' }}>
+                                            <td className="text-muted">{appt.client_phone}</td>
+                                            <td>{appt.service?.name || '-'}</td>
+                                            <td>
                                                 <select
                                                     value={appt.status}
                                                     onChange={(e) => updateStatus(appt.id, e.target.value)}
@@ -140,7 +140,7 @@ export default function AdminHistory() {
                                                     <option value="NO_SHOW">No vino</option>
                                                 </select>
                                             </td>
-                                            <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                                            <td style={{ textAlign: 'center' }}>
                                                 <button
                                                     onClick={() => togglePaid(appt.id, appt.is_paid)}
                                                     style={{
@@ -161,13 +161,13 @@ export default function AdminHistory() {
                                                     )}
                                                 </button>
                                             </td>
-                                            <td style={{ padding: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{appt.note || '-'}</td>
+                                            <td className="text-muted" style={{ fontSize: '0.85rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{appt.note || '-'}</td>
                                         </tr>
                                     );
                                 })}
                                 {filteredAppointments.length === 0 && (
-                                    <tr>
-                                        <td colSpan="8" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    <tr className="empty-row">
+                                        <td colSpan="8">
                                             No se encontraron turnos.
                                         </td>
                                     </tr>

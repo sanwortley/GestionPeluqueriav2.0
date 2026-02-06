@@ -171,6 +171,7 @@ button {
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Professional Tables */
@@ -203,9 +204,27 @@ table tbody tr:hover {
 }
 
 table td {
-  padding: 1.5rem 1rem !important;
+  padding: 1rem !important;
   color: #fff;
   vertical-align: middle;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrapper table {
+  width: 100%;
+}
+
+.empty-row td {
+  padding: 3rem 1rem !important;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  white-space: normal !important;
 }
 
 /* Row separation for different days */
@@ -285,7 +304,6 @@ table td {
   padding: 1.5rem;
   border: 1px solid #555;
   position: relative;
-  overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
@@ -338,6 +356,7 @@ table td {
   font-family: inherit;
   box-sizing: border-box;
   transition: border-color 0.2s;
+  max-width: 100%;
 }
 
 .input:focus {
@@ -656,6 +675,17 @@ table td {
   .flex-1,
   .flex-2 {
     width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  form .btn:not(.btn-sm) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-group,
+  .input-group {
+    min-width: 0 !important;
   }
 }
 
@@ -832,8 +862,17 @@ table td {
   /* Historial Table */
   table th,
   table td {
-    font-size: 0.7rem;
-    padding: 0.5rem 0.3rem !important;
+    font-size: 0.75rem;
+    padding: 0.6rem 0.4rem !important;
+  }
+
+  table th {
+    white-space: normal !important;
+    line-height: 1.2;
+  }
+
+  .table-wrapper table {
+    min-width: 100%;
   }
 
   /* Range Rows in Admin Dashboard */

@@ -27,38 +27,40 @@ export default function AdminClients() {
         <div className="container animate-fade-in">
             <h1 className="title" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Cartera de Clientes</h1>
 
-            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ background: '#1a1a1a', borderBottom: '2px solid var(--primary)' }}>
-                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--primary)', fontFamily: 'Staatliches' }}>ID</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--primary)', fontFamily: 'Staatliches' }}>Nombre</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--primary)', fontFamily: 'Staatliches' }}>Teléfono</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--primary)', fontFamily: 'Staatliches' }}>Email</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--primary)', fontFamily: 'Staatliches' }}>Registrado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {clients.map(client => (
-                            <tr key={client.id} style={{ borderBottom: '1px solid #333' }}>
-                                <td style={{ padding: '1rem', color: '#fff' }}>#{client.id}</td>
-                                <td style={{ padding: '1rem', color: '#fff', fontWeight: 'bold' }}>{client.name}</td>
-                                <td style={{ padding: '1rem', color: '#aaa' }}>{client.phone}</td>
-                                <td style={{ padding: '1rem', color: '#aaa' }}>{client.email || '-'}</td>
-                                <td style={{ padding: '1rem', color: '#aaa' }}>
-                                    {client.created_at ? format(new Date(client.created_at), 'dd/MM/yyyy') : '-'}
-                                </td>
-                            </tr>
-                        ))}
-                        {clients.length === 0 && (
+            <div className="card" style={{ padding: '0' }}>
+                <div className="table-wrapper">
+                    <table>
+                        <thead>
                             <tr>
-                                <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                                    No hay clientes registrados aún.
-                                </td>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Email</th>
+                                <th>Registrado</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {clients.map(client => (
+                                <tr key={client.id}>
+                                    <td>#{client.id}</td>
+                                    <td style={{ fontWeight: 'bold' }}>{client.name}</td>
+                                    <td className="text-muted">{client.phone}</td>
+                                    <td className="text-muted">{client.email || '-'}</td>
+                                    <td className="text-muted">
+                                        {client.created_at ? format(new Date(client.created_at), 'dd/MM/yyyy') : '-'}
+                                    </td>
+                                </tr>
+                            ))}
+                            {clients.length === 0 && (
+                                <tr className="empty-row">
+                                    <td colSpan="5">
+                                        No hay clientes registrados aún.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

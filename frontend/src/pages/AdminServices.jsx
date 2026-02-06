@@ -54,26 +54,26 @@ export default function AdminServices() {
             <div className="card">
                 <h2 className="subtitle">{editing ? 'Editar Servicio' : 'Nuevo Servicio'}</h2>
                 <form onSubmit={handleSubmit} className="flex gap-4 items-end flex-wrap">
-                    <div className="input-group" style={{ flex: 2, minWidth: '200px' }}>
+                    <div className="input-group" style={{ flex: 2 }}>
                         <label className="label">Nombre del Servicio</label>
                         <input
-                            type="text" placeholder="Ej: Corte Masculino" className="input width-100"
+                            type="text" placeholder="Ej: Corte Masculino" className="input"
                             value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
                             required
                         />
                     </div>
-                    <div className="input-group" style={{ flex: 1, minWidth: '120px' }}>
+                    <div className="input-group" style={{ flex: 1 }}>
                         <label className="label">Duración (min)</label>
                         <input
-                            type="number" placeholder="45" className="input width-100"
+                            type="number" placeholder="45" className="input"
                             value={formData.duration_min} onChange={e => setFormData({ ...formData, duration_min: parseInt(e.target.value) })}
                             required
                         />
                     </div>
-                    <div className="input-group" style={{ flex: 1, minWidth: '120px' }}>
+                    <div className="input-group" style={{ flex: 1 }}>
                         <label className="label">Precio ($)</label>
                         <input
-                            type="number" placeholder="0" className="input width-100"
+                            type="number" placeholder="0" className="input"
                             value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                         />
                     </div>

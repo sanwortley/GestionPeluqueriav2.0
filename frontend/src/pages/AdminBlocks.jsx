@@ -61,7 +61,7 @@ export default function AdminBlocks() {
             <div className="card" style={{ marginBottom: '2rem' }}>
                 <h2 className="subtitle">Nuevo Bloqueo (Rango)</h2>
                 <form onSubmit={handleSubmit} className="flex gap-4 items-end" style={{ flexWrap: 'wrap' }}>
-                    <div className="form-group flex-1" style={{ minWidth: '200px' }}>
+                    <div className="form-group flex-1">
                         <label className="label">Fecha Inicio</label>
                         <input
                             type="date" className="input"
@@ -69,7 +69,7 @@ export default function AdminBlocks() {
                             required
                         />
                     </div>
-                    <div className="form-group flex-1" style={{ minWidth: '200px' }}>
+                    <div className="form-group flex-1">
                         <label className="label">Fecha Fin</label>
                         <input
                             type="date" className="input"
@@ -93,7 +93,7 @@ export default function AdminBlocks() {
                             required
                         />
                     </div>
-                    <div className="form-group flex-2" style={{ minWidth: '300px' }}>
+                    <div className="form-group flex-2">
                         <label className="label">Razón (Ej: Vacaciones)</label>
                         <input
                             type="text" className="input"
