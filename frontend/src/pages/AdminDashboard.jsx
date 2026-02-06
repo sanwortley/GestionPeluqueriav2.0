@@ -109,6 +109,14 @@ export default function AdminDashboard() {
             setSlotSize(30);
             setRanges([]);
         }
+
+        // Auto-scroll on mobile to the detail section
+        if (window.innerWidth < 992) {
+            const detailElement = document.getElementById('day-detail');
+            if (detailElement) {
+                detailElement.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
     };
 
     const refreshDayAppointments = (date, allEvents) => {
@@ -199,6 +207,7 @@ export default function AdminDashboard() {
     const dayPropGetter = (date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
         const av = availabilityMap[dateStr];
+        const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateStr;
 
         // Check if date is within any block
         const isBlocked = blocks.some(b =>
@@ -206,8 +215,13 @@ export default function AdminDashboard() {
         );
 
         let style = {};
+        if (isSelected) {
+            style.border = '2px solid var(--primary)';
+        }
+
         if (isBlocked) {
-            style = { backgroundColor: 'rgba(239, 68, 68, 0.4)', border: '1px solid var(--danger)' };
+            style = { ...style, backgroundColor: 'rgba(239, 68, 68, 0.4)', border: '1px solid var(--danger)' };
+            if (isSelected) style.border = '3px solid var(--primary)';
         } else if (av) {
             if (!av.enabled) {
                 style = { backgroundColor: 'rgba(239, 68, 68, 0.2)' }; // Red-ish for disabled
@@ -242,6 +256,8 @@ export default function AdminDashboard() {
                         endAccessor="end"
                         selectable
                         onSelectSlot={handleSelectSlot}
+                        longPressThreshold={1}
+                        onDrillDown={(date) => handleSelectSlot({ start: date })}
                         onSelectEvent={(e) => {
                             handleSelectSlot({ start: e.start });
                             if (view === 'month') setView('day');
@@ -280,7 +296,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <div style={{ flex: 1 }} className="card">
+            <div style={{ flex: 1 }} className="card" id="day-detail">
                 <h2 className="subtitle">Detalle del Día</h2>
                 {selectedDate ? (
                     <div>
@@ -323,7 +339,7 @@ export default function AdminDashboard() {
                                         <div className="form-group">
                                             <label className="label">Rangos (Desde - Hasta)</label>
                                             {ranges.map((r, i) => (
-                                                <div key={i} className="flex gap-2 items-center" style={{ marginBottom: '0.5rem' }}>
+                                                <div key={i} className="flex gap-2 items-center range-row" style={{ marginBottom: '0.5rem' }}>
                                                     <input type="time" className="input" value={r.start_time} onChange={e => handleRangeChange(i, 'start_time', e.target.value)} />
                                                     <span>-</span>
                                                     <input type="time" className="input" value={r.end_time} onChange={e => handleRangeChange(i, 'end_time', e.target.value)} />

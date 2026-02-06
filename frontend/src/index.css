@@ -835,6 +835,30 @@ table td {
     font-size: 0.7rem;
     padding: 0.5rem 0.3rem !important;
   }
+
+  /* Range Rows in Admin Dashboard */
+  .range-row {
+    flex-wrap: nowrap !important;
+    gap: 0.25rem !important;
+  }
+
+  .range-row .input {
+    padding: 0.5rem 0.2rem !important;
+    font-size: 0.8rem;
+    min-width: 0;
+    /* Allow shrinking */
+  }
+
+  .range-row button {
+    padding: 0.5rem !important;
+    flex-shrink: 0;
+  }
+
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+  }
 }
 
 @media (max-width: 480px) {
