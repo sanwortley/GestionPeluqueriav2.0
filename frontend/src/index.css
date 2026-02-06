@@ -13,6 +13,12 @@
   --accent: #333333;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: 'Outfit', sans-serif;
@@ -354,9 +360,12 @@ table td {
   border: 1px solid var(--border);
   color: white;
   font-family: inherit;
-  box-sizing: border-box;
   transition: border-color 0.2s;
   max-width: 100%;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  text-align: left;
 }
 
 .input:focus {
