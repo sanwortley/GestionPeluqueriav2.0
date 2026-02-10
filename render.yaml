@@ -37,11 +37,11 @@ services:
       - key: BACKEND_WEBSITE_URL
         value: "https://roma-cabello-backend.onrender.com" # Cambiar por tu URL real de backend
       - key: ADMIN_PHONE
-        value: "5493517552167"
+        sync: false # Lo seteamos manual en el dashboard por seguridad
       - key: TELEGRAM_BOT_TOKEN
-        value: "8039653382:AAE80xLYmL_EnmqNu-hMkRthpatKsG1jmmw"
+        sync: false # Lo seteamos manual en el dashboard por seguridad
       - key: TELEGRAM_CHAT_ID
-        value: "5168953947"
+        sync: false # Lo seteamos manual en el dashboard por seguridad
 
   # WHATSAPP BRIDGE SERVICE
   - type: web
