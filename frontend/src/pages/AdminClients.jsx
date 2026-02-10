@@ -12,7 +12,7 @@ export default function AdminClients() {
 
     const fetchClients = async () => {
         try {
-            const res = await api.get('/clients');
+            const res = await api.get('/clients/');
             setClients(res.data);
         } catch (err) {
             console.error("Error fetching clients", err);

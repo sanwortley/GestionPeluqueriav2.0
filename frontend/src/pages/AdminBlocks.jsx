@@ -19,7 +19,7 @@ export default function AdminBlocks() {
 
     const fetchBlocks = async () => {
         try {
-            const res = await api.get('/blocks');
+            const res = await api.get('/blocks/');
             setBlocks(res.data);
         } catch (err) {
             console.error(err);
@@ -29,7 +29,7 @@ export default function AdminBlocks() {
     const handleDelete = async (id) => {
         if (confirm('¿Eliminar este bloqueo?')) {
             try {
-                await api.delete(`/blocks/${id}`);
+                await api.delete(`/blocks/${id}/`);
                 fetchBlocks();
             } catch (err) {
                 alert('Error al eliminar bloqueo: ' + (err.response?.data?.detail || err.message));
@@ -40,7 +40,7 @@ export default function AdminBlocks() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/blocks', formData);
+            await api.post('/blocks/', formData);
             setFormData({
                 start_date: format(new Date(), 'yyyy-MM-dd'),
                 end_date: format(new Date(), 'yyyy-MM-dd'),

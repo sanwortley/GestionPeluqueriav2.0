@@ -12,7 +12,7 @@ export default function AdminServices() {
 
     const fetchServices = async () => {
         try {
-            const res = await api.get('/services');
+            const res = await api.get('/services/');
             setServices(res.data);
         } catch (err) {
             console.error(err);
@@ -21,7 +21,7 @@ export default function AdminServices() {
 
     const handleDelete = async (id) => {
         if (confirm('Eliminar servicio?')) {
-            await api.delete(`/services/${id}`);
+            await api.delete(`/services/${id}/`);
             fetchServices();
         }
     };
@@ -35,9 +35,9 @@ export default function AdminServices() {
         e.preventDefault();
         try {
             if (editing) {
-                await api.put(`/services/${editing.id}`, formData);
+                await api.put(`/services/${editing.id}/`, formData);
             } else {
-                await api.post('/services', formData);
+                await api.post('/services/', formData);
             }
             setEditing(null);
             setFormData({ name: '', duration_min: 45, price: 0 });

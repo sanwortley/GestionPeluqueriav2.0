@@ -6,6 +6,9 @@ from app.schemas.appointment import AppointmentCreate, AppointmentReschedule
 from app.services.slot_generator import is_overlapping, time_to_min, parse_time, min_to_time
 
 from app.models.client import Client
+from app.services.whatsapp import send_whatsapp_sync
+from app.services.telegram import send_telegram_sync
+
 
 def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
     # 1. Get Service
@@ -21,7 +24,7 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
     # 2. Validate availability
     query = db.query(Appointment).filter(
         Appointment.date == appt_in.date,
-        Appointment.status.in_([AppointmentStatus.CONFIRMED, AppointmentStatus.FINISHED])
+        Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED, AppointmentStatus.FINISHED])
     )
 
     if appt_in.staff_id:
@@ -67,11 +70,30 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
         client_id=client.id, # Link to client
         note=appt_in.note,
         is_paid=appt_in.is_paid,
-        status=AppointmentStatus.CONFIRMED
+        status=AppointmentStatus.PENDING
     )
     db.add(appt)
     db.commit()
     db.refresh(appt)
+    
+    # Notify Client (Request Received)
+    client_msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
+                  f"📅 Fecha: {appt.date}\n"
+                  f"🕒 Hora: {appt.start_time}\n"
+                  f"✨ Servicio: {service.name}\n\n"
+                  f"✅ *Por favor, respondé este mensaje con un 1 para CONFIRMAR tu asistencia* "
+                  f"o con un *2 para CANCELAR*.")
+    send_whatsapp_sync(appt.client_phone, client_msg)
+    
+    # Notify Admin (Telegram)
+    admin_msg = (f"<b>🚨 ¡NUEVA SOLICITUD DE TURNO! 🚨</b>\n\n"
+                 f"👤 <b>Cliente:</b> {appt.client_name}\n"
+                 f"📞 <b>Tel:</b> {appt.client_phone}\n"
+                 f"📅 <b>Fecha:</b> {appt.date}\n"
+                 f"🕒 <b>Hora:</b> {appt.start_time}\n"
+                 f"✨ <b>Servicio:</b> {service.name}")
+    send_telegram_sync(admin_msg)
+    
     return appt
 
 def cancel_appointment(db: Session, id: int) -> Appointment:
@@ -82,6 +104,36 @@ def cancel_appointment(db: Session, id: int) -> Appointment:
     appt.status = AppointmentStatus.CANCELLED
     db.commit()
     db.refresh(appt)
+    
+    # Notify Cancellation
+    msg = (f"Hola {appt.client_name}. Te informamos que tu turno para el día {appt.date} "
+           f"a las {appt.start_time} ha sido CANCELADO. Si fue un error, por favor contactanos.")
+    send_whatsapp_sync(appt.client_phone, msg)
+    
+    # Notify Admin Cancellation
+    from app.services.whatsapp import settings
+    if settings.ADMIN_PHONE:
+        admin_cancel_msg = (f"❌ Turno Cancelado ❌\n👤 Cliente: {appt.client_name}\n📅 Fecha: {appt.date}\n🕒 Hora: {appt.start_time}")
+        send_whatsapp_sync(settings.ADMIN_PHONE, admin_cancel_msg)
+    
+    return appt
+
+def confirm_appointment(db: Session, id: int) -> Appointment:
+    appt = db.query(Appointment).filter(Appointment.id == id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    appt.status = AppointmentStatus.CONFIRMED
+    db.commit()
+    db.refresh(appt)
+    
+    # Notify Client via WhatsApp
+    msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Tu turno en Roma Cabello ha sido **CONFIRMADO** por el peluquero.\n"
+           f"📅 Fecha: {appt.date}\n"
+           f"🕒 Hora: {appt.start_time}\n"
+           f"¡Te esperamos!")
+    send_whatsapp_sync(appt.client_phone, msg)
+    
     return appt
 
 def finish_appointment(db: Session, id: int, is_paid: bool = False) -> Appointment:
@@ -135,6 +187,14 @@ def reschedule_appointment(db: Session, id: int, parsed: AppointmentReschedule) 
         
     db.commit()
     db.refresh(appt)
+    
+    # Notify Reschedule
+    msg = (f"¡Hola {appt.client_name}! Tu turno ha sido REPROGRAMADO:\n"
+           f"📅 Nueva fecha: {appt.date}\n"
+           f"🕒 Nueva hora: {appt.start_time}\n"
+           f"¡Te esperamos!")
+    send_whatsapp_sync(appt.client_phone, msg)
+    
     return appt
 
 def update_appointment(db: Session, id: int, appt_in: any) -> Appointment:
@@ -149,3 +209,12 @@ def update_appointment(db: Session, id: int, appt_in: any) -> Appointment:
     db.commit()
     db.refresh(appt)
     return appt
+
+def delete_appointment(db: Session, id: int) -> bool:
+    appt = db.query(Appointment).filter(Appointment.id == id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    db.delete(appt)
+    db.commit()
+    return True

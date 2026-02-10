@@ -38,8 +38,8 @@ export default function AdminDashboard() {
     const fetchAllData = async () => {
         try {
             const [apptsRes, blocksRes] = await Promise.all([
-                api.get('/appointments'),
-                api.get('/blocks')
+                api.get('/appointments/'),
+                api.get('/blocks/')
             ]);
 
             const apptEvents = apptsRes.data.map(appt => ({
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
         const start = format(subMonths(date, 1), 'yyyy-MM-dd');
         const end = format(addMonths(date, 1), 'yyyy-MM-dd');
         try {
-            const res = await api.get(`/availability?from=${start}&to=${end}`);
+            const res = await api.get(`/availability/?from=${start}&to=${end}`);
             const map = {};
             res.data.forEach(d => {
                 map[d.date] = d;
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
     const handleDeleteBlock = async (id) => {
         if (!confirm('¿Seguro que deseas eliminar este bloqueo?')) return;
         try {
-            await api.delete(`/blocks/${id}`);
+            await api.delete(`/blocks/${id}/`);
             alert('Bloqueo eliminado');
             fetchAllData(); // Refresh everything
         } catch (err) {
@@ -155,10 +155,12 @@ export default function AdminDashboard() {
 
             if (status === 'CANCELLED') {
                 if (!confirm('¿Seguro que deseas cancelar este turno?')) return;
-                await api.put(`/appointments/${id}/cancel`);
+                await api.put(`/appointments/${id}/cancel/`);
             } else if (status === 'FINISHED') {
                 const isPaid = paidStatus[id] || false;
-                await api.put(`/appointments/${id}/finish?is_paid=${isPaid}`);
+                await api.put(`/appointments/${id}/finish/?is_paid=${isPaid}`);
+            } else if (status === 'CONFIRMED') {
+                await api.put(`/appointments/${id}/confirm/`);
             } else {
                 return;
             }
@@ -175,7 +177,7 @@ export default function AdminDashboard() {
         if (!selectedDate) return;
         try {
             const d = format(selectedDate, 'yyyy-MM-dd');
-            await api.put(`/availability/${d}`, {
+            await api.put(`/availability/${d}/`, {
                 enabled,
                 slot_size_min: slotSize,
                 ranges,
@@ -393,7 +395,8 @@ export default function AdminDashboard() {
                                                                 background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
                                                                     (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)'),
                                                                 color: e.resource.status === 'CONFIRMED' ? '#34D399' :
-                                                                    (e.resource.status === 'FINISHED' ? '#60A5FA' : '#F87171'),
+                                                                    (e.resource.status === 'FINISHED' ? '#60A5FA' :
+                                                                        (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
                                                                 fontWeight: 'bold',
                                                                 textTransform: 'uppercase',
                                                                 border: '1px solid currentColor',
@@ -401,7 +404,8 @@ export default function AdminDashboard() {
                                                                 flexShrink: 0
                                                             }}>
                                                                 {e.resource.status === 'CONFIRMED' ? 'CONFIRMADO' :
-                                                                    e.resource.status === 'FINISHED' ? 'FINALIZADO' : 'CANCELADO'}
+                                                                    e.resource.status === 'FINISHED' ? 'FINALIZADO' :
+                                                                        e.resource.status === 'PENDING' ? 'PENDIENTE' : 'CANCELADO'}
                                                             </span>
                                                         </div>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>
@@ -427,6 +431,24 @@ export default function AdminDashboard() {
                                                     </button>
                                                 ) : (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                        {e.resource.status === 'PENDING' && (
+                                                            <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
+                                                                    className="btn btn-danger btn-sm"
+                                                                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
+                                                                >
+                                                                    Rechazar
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')}
+                                                                    className="btn btn-primary btn-sm"
+                                                                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#FBBF24', borderColor: '#FBBF24', color: '#000' }}
+                                                                >
+                                                                    Confirmar
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                         {e.resource.status === 'CONFIRMED' && (
                                                             <>
                                                                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--text-muted)' }}>

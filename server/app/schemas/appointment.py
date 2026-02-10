@@ -4,6 +4,7 @@ from datetime import date
 from enum import Enum
 
 class AppointmentStatus(str, Enum):
+    PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
     NO_SHOW = "NO_SHOW"

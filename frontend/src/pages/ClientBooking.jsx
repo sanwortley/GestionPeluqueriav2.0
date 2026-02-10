@@ -43,7 +43,7 @@ export default function ClientBooking() {
 
     const fetchBlocks = async () => {
         try {
-            const res = await api.get('/blocks');
+            const res = await api.get('/blocks/');
             setBlocks(res.data);
         } catch (err) {
             console.error(err);
@@ -52,7 +52,7 @@ export default function ClientBooking() {
 
     const fetchServices = async () => {
         try {
-            const res = await api.get('/services');
+            const res = await api.get('/services/');
             setServices(res.data);
         } catch (err) {
             console.error(err);
@@ -65,7 +65,7 @@ export default function ClientBooking() {
         setError('');
         const dateStr = format(date, 'yyyy-MM-dd');
         try {
-            const res = await api.get('/slots', {
+            const res = await api.get('/slots/', {
                 params: {
                     date: dateStr,
                     service_id: serviceId,
@@ -111,7 +111,7 @@ export default function ClientBooking() {
         e.preventDefault();
         try {
             setLoading(true);
-            await api.post('/appointments', {
+            await api.post('/appointments/', {
                 date: format(selectedDate, 'yyyy-MM-dd'),
                 start_time: selectedSlot.start_time,
                 service_id: selectedService.id,

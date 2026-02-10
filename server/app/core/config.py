@@ -17,9 +17,18 @@ class Settings(BaseSettings):
     
     TIMEZONE: str = "America/Argentina/Cordoba"
 
+    # WhatsApp (Bridge Local)
+    WHATSAPP_BRIDGE_URL: str = "http://localhost:3001"
+    ADMIN_PHONE: str = ""
+
+    # Telegram
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+
     class Config:
         case_sensitive = True
         env_file = ".env"
+        extra = 'ignore'
 
     def get_database_url(self):
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"

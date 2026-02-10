@@ -9,7 +9,7 @@ services:
   - type: web
     name: roma-cabello-backend
     env: python
-    region: oregon # O la que prefieras
+    region: oregon
     plan: free
     rootDir: server
     buildCommand: pip install -r requirements.txt
@@ -27,12 +27,43 @@ services:
         value: 10
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: TIMEZONE
+        value: America/Argentina/Cordoba
+      - key: WHATSAPP_BRIDGE_URL
+        fromService:
+          type: web
+          name: roma-cabello-bridge
+          property: host
+      - key: BACKEND_WEBSITE_URL
+        value: "https://roma-cabello-backend.onrender.com" # Cambiar por tu URL real de backend
+      - key: ADMIN_PHONE
+        value: "5493517552167"
+      - key: TELEGRAM_BOT_TOKEN
+        value: "8039653382:AAE80xLYmL_EnmqNu-hMkRthpatKsG1jmmw"
+      - key: TELEGRAM_CHAT_ID
+        value: "5168953947"
+
+  # WHATSAPP BRIDGE SERVICE
+  - type: web
+    name: roma-cabello-bridge
+    env: docker
+    plan: starter # Se recomienda starter por el uso de memoria de Chrome
+    rootDir: whatsapp-bridge
+    envVars:
+      - key: BACKEND_WEBSITE_URL
+        fromService:
+          type: web
+          name: roma-cabello-backend
+          property: host
 
   # FRONTEND SERVICE
   - type: web
     name: roma-cabello-frontend
     env: static
     rootDir: frontend
+    domains:
+      - romacabello.com.ar
+      - www.romacabello.com.ar
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     routes:

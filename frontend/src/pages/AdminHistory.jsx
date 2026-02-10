@@ -14,7 +14,7 @@ export default function AdminHistory() {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/appointments');
+            const res = await api.get('/appointments/');
             // Sort by date desc (Most recent first)
             const sorted = res.data.sort((a, b) => {
                 const dateA = new Date(a.date + 'T' + a.start_time);
@@ -31,7 +31,7 @@ export default function AdminHistory() {
 
     const togglePaid = async (id, currentPaid) => {
         try {
-            await api.patch(`/appointments/${id}`, { is_paid: !currentPaid });
+            await api.patch(`/appointments/${id}/`, { is_paid: !currentPaid });
             // Update local state
             setAppointments(appointments.map(a =>
                 a.id === id ? { ...a, is_paid: !currentPaid } : a
@@ -46,13 +46,26 @@ export default function AdminHistory() {
         try {
             if (!confirm(`¿Seguro que deseas cambiar el estado a ${newStatus === 'CANCELLED' ? 'CANCELADO' : 'CONFIRMADO'}?`)) return;
 
-            await api.patch(`/appointments/${id}`, { status: newStatus });
+            await api.patch(`/appointments/${id}/`, { status: newStatus });
             // Update local state
             setAppointments(appointments.map(a =>
                 a.id === id ? { ...a, status: newStatus } : a
             ));
         } catch (err) {
             alert('Error al actualizar estado del turno');
+            console.error(err);
+        }
+    };
+
+    const deleteAppointment = async (id) => {
+        try {
+            if (!confirm('¿Estás seguro de que deseas ELIMINAR este turno permanentemente del historial? Esta acción no se puede deshacer.')) return;
+
+            await api.delete(`/appointments/${id}/`);
+            // Update local state
+            setAppointments(appointments.filter(a => a.id !== id));
+        } catch (err) {
+            alert('Error al eliminar el turno');
             console.error(err);
         }
     };
@@ -97,6 +110,7 @@ export default function AdminHistory() {
                                     <th>Estado</th>
                                     <th style={{ textAlign: 'center' }}>Cobrado</th>
                                     <th>Nota</th>
+                                    <th style={{ textAlign: 'center' }}>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -134,6 +148,7 @@ export default function AdminHistory() {
                                                         width: '120px'
                                                     }}
                                                 >
+                                                    <option value="PENDING">Pendiente</option>
                                                     <option value="CONFIRMED">Confirmado</option>
                                                     <option value="FINISHED">Finalizado</option>
                                                     <option value="CANCELLED">Cancelado</option>
@@ -161,13 +176,31 @@ export default function AdminHistory() {
                                                     )}
                                                 </button>
                                             </td>
-                                            <td className="text-muted" style={{ fontSize: '0.85rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{appt.note || '-'}</td>
+                                            <td className="text-muted" style={{ fontSize: '0.85rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{appt.note || '-'}</td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <button
+                                                    onClick={() => deleteAppointment(appt.id)}
+                                                    style={{
+                                                        background: 'rgba(239, 68, 68, 0.1)',
+                                                        border: '1px solid #EF4444',
+                                                        borderRadius: '6px',
+                                                        color: '#EF4444',
+                                                        cursor: 'pointer',
+                                                        padding: '0.3rem 0.5rem',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                    title="Eliminar turno permanentemente"
+                                                >
+                                                    ELIMINAR
+                                                </button>
+                                            </td>
                                         </tr>
                                     );
                                 })}
                                 {filteredAppointments.length === 0 && (
                                     <tr className="empty-row">
-                                        <td colSpan="8">
+                                        <td colSpan="9">
                                             No se encontraron turnos.
                                         </td>
                                     </tr>

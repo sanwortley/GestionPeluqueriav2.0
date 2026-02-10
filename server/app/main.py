@@ -8,7 +8,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from app.routers import auth, services, availability, blocks, slots, appointments, clients
+from app.routers import auth, services, availability, blocks, slots, appointments, clients, webhooks
 from app.core import config
 from app.core.config import settings
 import app.models # Register all models
@@ -32,6 +32,7 @@ if settings.ENVIRONMENT == "production":
 # CORS
 origins = [
     "http://localhost:5173",
+    "http://localhost:5174",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "https://roma-cabello-frontend.onrender.com", # Example production domain
@@ -76,3 +77,4 @@ app.include_router(blocks.router, prefix="/api/blocks", tags=["Blocks"])
 app.include_router(slots.router, prefix="/api/slots", tags=["Slots"])
 app.include_router(appointments.router, prefix="/api/appointments", tags=["Appointments"])
 app.include_router(clients.router, prefix="/api/clients", tags=["Clients"])
+app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])

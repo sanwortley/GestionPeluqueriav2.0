@@ -8,6 +8,7 @@ from app.models.appointment import Appointment
 from app.services.appointment_service import create_appointment as service_create_appointment
 from app.services.appointment_service import cancel_appointment as service_cancel_appointment
 from app.services.appointment_service import reschedule_appointment as service_reschedule_appointment
+from app.services.appointment_service import confirm_appointment as service_confirm_appointment
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -42,6 +43,10 @@ def get_appointments(
 def cancel_appointment(id: int, db: Session = Depends(get_db)):
     return service_cancel_appointment(db, id)
 
+@router.put("/{id}/confirm", response_model=AppointmentOut, dependencies=[Depends(get_current_admin)])
+def confirm_appointment(id: int, db: Session = Depends(get_db)):
+    return service_confirm_appointment(db, id)
+
 @router.put("/{id}/reschedule", response_model=AppointmentOut, dependencies=[Depends(get_current_admin)])
 def reschedule_appointment(id: int, parsed: AppointmentReschedule, db: Session = Depends(get_db)):
     return service_reschedule_appointment(db, id, parsed)
@@ -55,3 +60,8 @@ def finish_appointment(id: int, is_paid: bool = Query(False), db: Session = Depe
 def update_appointment(id: int, appt_in: AppointmentUpdate, db: Session = Depends(get_db)):
     from app.services.appointment_service import update_appointment as service_update_appointment
     return service_update_appointment(db, id, appt_in)
+@router.delete("/{id}", dependencies=[Depends(get_current_admin)])
+def delete_appointment(id: int, db: Session = Depends(get_db)):
+    from app.services.appointment_service import delete_appointment as service_delete_appointment
+    service_delete_appointment(db, id)
+    return {"ok": True}

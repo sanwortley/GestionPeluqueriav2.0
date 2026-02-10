@@ -5,6 +5,7 @@ from sqlalchemy.sql import func
 from app.db.session import Base
 
 class AppointmentStatus(str, enum.Enum):
+    PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
     NO_SHOW = "NO_SHOW"

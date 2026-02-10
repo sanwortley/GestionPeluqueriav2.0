@@ -120,7 +120,7 @@ def generate_slots(
     # Appointments
     appts_query = db.query(Appointment).filter(
         Appointment.date == target_date,
-        Appointment.status.in_([AppointmentStatus.CONFIRMED, AppointmentStatus.FINISHED])
+        Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED, AppointmentStatus.FINISHED])
     )
     if staff_id:
         appts_query = appts_query.filter(Appointment.staff_id == staff_id)
