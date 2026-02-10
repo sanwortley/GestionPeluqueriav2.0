@@ -14,3 +14,7 @@ class AdminUserOut(BaseModel):
     
     class Config:
         from_attributes = True
+
+class PasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str

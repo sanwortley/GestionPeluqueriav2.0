@@ -47,6 +47,7 @@ export default function Layout({ children }) {
                                 <Link to="/admin/blocks" className={`nav-link ${location.pathname === '/admin/blocks' ? 'active' : ''}`}>Bloqueos</Link>
                                 <Link to="/admin/history" className={`nav-link ${location.pathname === '/admin/history' ? 'active' : ''}`}>Historial</Link>
                                 <Link to="/admin/clients" className={`nav-link ${location.pathname === '/admin/clients' ? 'active' : ''}`}>Clientes</Link>
+                                <Link to="/admin/settings" className={`nav-link ${location.pathname === '/admin/settings' ? 'active' : ''}`}>Ajustes</Link>
                             </div>
                             <button onClick={handleLogout} className="btn btn-secondary btn-logout">
                                 <span className="logout-text">Cerrar Sesión</span>

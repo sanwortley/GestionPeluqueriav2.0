@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from app.db.session import SessionLocal
-from app.core.security import verify_password, create_access_token
+from app.core.security import verify_password, create_access_token, get_password_hash
 from app.models.admin_user import AdminUser
-from app.schemas.auth import Token, AdminUserOut
+from app.schemas.auth import Token, AdminUserOut, PasswordUpdate
 from app.core.deps import get_db, get_current_admin
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -25,3 +25,16 @@ def login_access_token(request: Request, db: Session = Depends(get_db), form_dat
 @router.get("/me", response_model=AdminUserOut)
 def read_users_me(current_user: AdminUser = Depends(get_current_admin)):
     return current_user
+
+@router.post("/update-password")
+def update_password(
+    password_data: PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(get_current_admin)
+):
+    if not verify_password(password_data.current_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+    
+    current_user.password_hash = get_password_hash(password_data.new_password)
+    db.commit()
+    return {"ok": True, "message": "Contraseña actualizada correctamente"}
