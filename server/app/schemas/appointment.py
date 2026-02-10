@@ -24,11 +24,6 @@ class AppointmentBase(BaseModel):
 class AppointmentCreate(BaseModel):
     date: date
     start_time: str
-    # end_time calculated in backend or passed?
-    # User requirement: "body: {date,start_time,service_id...}" -> end_time derived from service duration usually.
-    # But let's accept it or calculate it. The prompt says "Slots: generar...". When user picks a slot, they pick start time.
-    # Duration depends on service.
-    # The prompt body example does not list end_time. So we should calculate it.
     service_id: int
     staff_id: Optional[int] = None
     client_name: str

@@ -32,12 +32,7 @@ def update_availability(
     avail_in: AvailabilityUpdate,
     db: Session = Depends(get_db)
 ):
-    # Check if exists
-    # staff_id from body? or URL? Prompt says body has staff_id?. But URL has date.
-    # Note: Unique Constraint is (date, staff_id).
-    # If URL only has date, we assume staff_id is in body or None.
-    
-    target_staff_id = avail_in.staff_id # None or int
+    target_staff_id = avail_in.staff_id
     
     existing = db.query(AvailabilityDay).filter(
         AvailabilityDay.date == date_str,
@@ -47,7 +42,7 @@ def update_availability(
     if not existing:
         existing = AvailabilityDay(date=date_str, staff_id=target_staff_id)
         db.add(existing)
-        db.commit() # to get ID?
+        db.commit()
     
     if avail_in.enabled is not None:
         existing.enabled = avail_in.enabled

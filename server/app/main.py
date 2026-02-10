@@ -22,8 +22,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Security Middleware
 app.add_middleware(
     TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "render.com", "*.render.com", "*"] 
-    # In production, replace "*" with specific domain
+    allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "render.com", "*.render.com"]
 )
 
 if settings.ENVIRONMENT == "production":
@@ -35,10 +34,10 @@ origins = [
     "http://localhost:5174",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
-    "https://roma-cabello-frontend.onrender.com", # Example production domain
+    "https://roma-cabello-frontend.onrender.com",
     "https://roma-cabello.com",
-    "*" # Be careful with * in production if strict security is needed, but often used for public APIs or simple setups
 ]
+
 
 app.add_middleware(
     CORSMiddleware,

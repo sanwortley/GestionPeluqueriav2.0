@@ -53,40 +53,6 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background: var(--glass);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.navbar-brand-container {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  text-decoration: none;
-}
-
-.nav-logo {
-  height: 80px;
-  width: 80px;
-  border-radius: 50%;
-  border: 3px solid var(--primary);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-  transition: transform 0.3s ease;
-  object-fit: cover;
-}
-
-.nav-logo:hover {
-  transform: scale(1.1) rotate(5deg);
-}
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 1.5rem 4rem;
   background: rgba(0, 0, 0, 0.95);
   border-bottom: 1px solid var(--border);
@@ -94,6 +60,13 @@ button {
   position: sticky;
   top: 0;
   z-index: 1000;
+}
+
+.navbar-brand-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
 }
 
 .navbar-top {

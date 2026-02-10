@@ -137,22 +137,26 @@ export default function AdminHistory() {
                                                         padding: '0.4rem',
                                                         borderRadius: '4px',
                                                         fontSize: '0.8rem',
-                                                        backgroundColor: appt.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
-                                                            appt.status === 'CANCELLED' ? 'rgba(239, 68, 68, 0.2)' :
-                                                                appt.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                                                        color: appt.status === 'CONFIRMED' ? '#10B981' :
-                                                            appt.status === 'CANCELLED' ? '#EF4444' :
-                                                                appt.status === 'FINISHED' ? '#3B82F6' : '#eee',
+                                                        backgroundColor:
+                                                            appt.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
+                                                                appt.status === 'CANCELLED' ? 'rgba(239, 68, 68, 0.2)' :
+                                                                    appt.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
+                                                                        appt.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(107, 114, 128, 0.2)',
+                                                        color:
+                                                            appt.status === 'CONFIRMED' ? '#10B981' :
+                                                                appt.status === 'CANCELLED' ? '#EF4444' :
+                                                                    appt.status === 'FINISHED' ? '#3B82F6' :
+                                                                        appt.status === 'PENDING' ? '#F59E0B' : '#9CA3AF',
                                                         border: '1px solid rgba(255,255,255,0.1)',
                                                         cursor: 'pointer',
                                                         width: '120px'
                                                     }}
                                                 >
-                                                    <option value="PENDING">Pendiente</option>
-                                                    <option value="CONFIRMED">Confirmado</option>
-                                                    <option value="FINISHED">Finalizado</option>
-                                                    <option value="CANCELLED">Cancelado</option>
-                                                    <option value="NO_SHOW">No vino</option>
+                                                    <option value="PENDING" style={{ background: '#111', color: '#F59E0B' }}>Pendiente</option>
+                                                    <option value="CONFIRMED" style={{ background: '#111', color: '#10B981' }}>Confirmado</option>
+                                                    <option value="FINISHED" style={{ background: '#111', color: '#3B82F6' }}>Finalizado</option>
+                                                    <option value="CANCELLED" style={{ background: '#111', color: '#EF4444' }}>Cancelado</option>
+                                                    <option value="NO_SHOW" style={{ background: '#111', color: '#9CA3AF' }}>No vino</option>
                                                 </select>
                                             </td>
                                             <td style={{ textAlign: 'center' }}>

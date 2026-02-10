@@ -393,7 +393,8 @@ export default function AdminDashboard() {
                                                                 padding: '3px 8px',
                                                                 borderRadius: '12px',
                                                                 background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
-                                                                    (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)'),
+                                                                    (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
+                                                                        (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
                                                                 color: e.resource.status === 'CONFIRMED' ? '#34D399' :
                                                                     (e.resource.status === 'FINISHED' ? '#60A5FA' :
                                                                         (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),

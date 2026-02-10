@@ -60,7 +60,6 @@ def generate_slots(
     
     avail_day = query.first()
 
-    current_time = get_current_time()
     # If looking at today, we must filter out passed time
     is_today = (target_date == current_time.date())
     now_minutes = time_to_min(current_time.time()) if is_today else -1
@@ -79,20 +78,14 @@ def generate_slots(
         return []
 
     # 3. Generate Candidate Slots
-    # We generate slots based on slot_size intervals? Or just valid start times?
-    # Prompt: "Generar slots por intervalos de 45 min dentro de los rangos"
-    # Usually this means fixed grid: 10:00, 10:45, ...
-    
     candidates = []
     
     for r_start, r_end in ranges:
         start_min = time_to_min(parse_time(r_start))
         end_min = time_to_min(parse_time(r_end))
         
-        # Iterate by slot_size
         curr = start_min
         while curr + duration <= end_min:
-            # Slot Candidate
             s_start = curr
             s_end = curr + duration
             
@@ -107,11 +100,9 @@ def generate_slots(
     if not candidates:
         return []
 
-    # 4. Fetch Blacks and Appointments to filter
-    # Blocks that overlap with the target_date
+    # 4. Fetch Blocks and Appointments to filter
     blocks_query = db.query(Block).filter(Block.start_date <= target_date, Block.end_date >= target_date)
     if staff_id:
-        # Blocks for this staff OR global blocks (staff_id=None)? Assuming blocks can be specific or global
         blocks_query = blocks_query.filter(or_(Block.staff_id == staff_id, Block.staff_id.is_(None)))
     else:
         blocks_query = blocks_query.filter(Block.staff_id.is_(None))
