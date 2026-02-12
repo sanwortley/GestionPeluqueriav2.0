@@ -358,8 +358,8 @@ export default function ClientBooking() {
                         <button className="btn btn-secondary" onClick={() => setStep(2)}>Volver</button>
 
                         {loading && <p>Cargando horarios...</p>}
-
-                        {!loading && slots.length === 0 && <p style={{ marginTop: '1rem' }}>No hay turnos disponibles para este día/servicio.</p>}
+                        {error && <p style={{ color: '#ff4444', marginTop: '1rem', padding: '10px', background: 'rgba(255, 68, 68, 0.1)', borderRadius: '4px' }}>{error}</p>}
+                        {!loading && !error && slots.length === 0 && <p style={{ marginTop: '1rem' }}>No hay turnos disponibles para este día/servicio.</p>}
 
                         <div className="slots-grid">
                             {slots.map((slot, idx) => (
