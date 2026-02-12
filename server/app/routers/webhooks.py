@@ -30,21 +30,33 @@ async def ultramsg_webhook(request: Request, db: Session = Depends(get_db)):
     clean_phone = from_phone.split("@")[0]
     logger.info(f"Webhook recibido: Mensaje='{body}' desde {clean_phone}")
     
-    # Find PENDING appointments. We search for cases where the DB phone is contained in the WhatsApp phone (to handle prefixes)
-    # or vice versa.
-    all_pending = db.query(Appointment).filter(Appointment.status == AppointmentStatus.PENDING).all()
+    # Buscar turnos pendientes que hayan recibido una solicitud recientemente (últimas 48hs)
+    from datetime import datetime, timedelta
+    limit_time = datetime.now() - timedelta(hours=48)
+    
+    all_pending = db.query(Appointment).filter(
+        Appointment.status == AppointmentStatus.PENDING,
+        Appointment.confirmation_sent_at != None,
+        Appointment.confirmation_sent_at >= limit_time
+    ).all()
     
     appt = None
     for a in all_pending:
         db_phone = a.client_phone.replace("+", "").replace(" ", "")
-        # If one is contained in the other (at least 8 digits match at the end)
+        # Normalizar el teléfono de la DB para comparar
+        if db_phone.startswith("549"):
+            pass
+        elif db_phone.startswith("54"):
+            db_phone = "549" + db_phone[2:]
+        
+        # Comparar si el teléfono coincide
         if db_phone in clean_phone or clean_phone in db_phone:
             appt = a
             break
 
     if not appt:
-        logger.warning(f"No se encontró turno PENDING para el teléfono: {clean_phone}")
-        return {"ok": True, "detail": "No pending appointment found"}
+        logger.warning(f"No se encontró turno PENDING con recordatorio reciente para: {clean_phone}")
+        return {"ok": True, "detail": "No pending appointment with recent reminder found"}
 
     if body == "1":
         # CONFIRM

@@ -4,6 +4,15 @@ const QRCode = require('qrcode');
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
+
+const LOG_FILE = path.join(__dirname, 'bridge.log');
+function logToFile(msg) {
+    const time = new Date().toISOString();
+    fs.appendFileSync(LOG_FILE, `[${time}] ${msg}\n`);
+    console.log(msg);
+}
 
 const app = express();
 app.use(bodyParser.json());
@@ -50,32 +59,25 @@ client.on('ready', () => {
 });
 
 client.on('message_create', async (msg) => {
-    // Ignorar estados de WhatsApp
+    // CAPTURAR TODO PARA DEBUG
+    const from = msg.from;
+    const body = msg.body || "";
+    logToFile(`[DETECCION] De: ${from} | Body: "${body}" | FromMe: ${msg.fromMe}`);
+
     if (msg.from === 'status@broadcast') return;
 
-    // Filtro de producción: Evitar que el bot responda a sus propios mensajes
-    if (msg.fromMe) return;
-
-    // Solo procesar chats individuales
-    if (!msg.from.includes('@c.us')) return;
-
-    const body = msg.body.trim().toLowerCase();
-    const from = msg.from.split('@')[0];
-
-    // Solo logueamos que SE RECIBIÓ algo, sin mostrar el contenido completo por privacidad
-    if (body === '1' || body === '2') {
-        console.log(`🎯 Respuesta de confirmación detectada (${body}) de un cliente.`);
+    if (body.trim() === '1' || body.trim() === '2') {
+        logToFile(`🎯 COINCIDENCIA CON EL "1" o "2"`);
         try {
             const res = await axios.post(`${BACKEND_URL}/api/webhooks/ultramsg`, {
                 data: {
-                    body: body,
+                    body: body.trim(),
                     from: msg.from
                 }
             });
-            // Log minimalista de éxito
-            if (res.data.ok) console.log(`✅ Turno procesado correctamente.`);
+            logToFile(`✅ Backend webhook response: ${JSON.stringify(res.data)}`);
         } catch (error) {
-            console.error(`❌ Error al procesar respuesta en backend.`);
+            logToFile(`❌ Error avisando al backend: ${error.message}`);
         }
     }
 });
