@@ -27,9 +27,12 @@ class Appointment(Base):
     client_id = Column(Integer, ForeignKey("client.id"), nullable=True)
     note = Column(String, nullable=True)
     
-    status = Column(Enum(AppointmentStatus), default=AppointmentStatus.CONFIRMED, nullable=False)
+    status = Column(Enum(AppointmentStatus), default=AppointmentStatus.PENDING, nullable=False)
     is_paid = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Tracking para confirmaciones
+    confirmation_sent_at = Column(DateTime(timezone=True), nullable=True)  # Cuando se envió la solicitud de confirmación
 
     service = relationship("Service")
     staff = relationship("Staff")

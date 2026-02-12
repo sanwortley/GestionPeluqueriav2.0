@@ -77,12 +77,13 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
     db.refresh(appt)
     
     # Notify Client (Request Received)
+    # Notify Client (Request Received)
     client_msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
                   f"📅 Fecha: {appt.date}\n"
                   f"🕒 Hora: {appt.start_time}\n"
                   f"✨ Servicio: {service.name}\n\n"
-                  f"✅ *Por favor, respondé este mensaje con un 1 para CONFIRMAR tu asistencia* "
-                  f"o con un *2 para CANCELAR*.")
+                  f"✅ *Tu turno ha sido registrado correctamente.*\n"
+                  f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
     send_whatsapp_sync(appt.client_phone, client_msg)
     
     # Notify Admin (Telegram)
