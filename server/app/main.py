@@ -66,9 +66,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     # Log the exception here in a real production environment
+    import traceback
+    error_detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     return JSONResponse(
         status_code=500,
-        content={"ok": False, "message": "Internal Server Error"},
+        content={"ok": False, "message": "Internal Server Error", "detail": str(exc), "traceback": error_detail},
     )
 
 @app.get("/")
