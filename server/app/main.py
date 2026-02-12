@@ -34,7 +34,7 @@ app.add_middleware(
 if settings.ENVIRONMENT == "production":
     app.add_middleware(HTTPSRedirectMiddleware)
 
-# CORS
+# CORS Origins
 origins = [
     "http://localhost:5173",
     "http://localhost:5174",
@@ -45,7 +45,6 @@ origins = [
     "https://romacabello.com.ar",
     "https://www.romacabello.com.ar",
 ]
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -65,13 +64,31 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    # Log the exception here in a real production environment
     import traceback
     error_detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    return JSONResponse(
+    print(f"ERROR: {str(exc)}")
+    print(error_detail)
+    
+    response = JSONResponse(
         status_code=500,
-        content={"ok": False, "message": "Internal Server Error", "detail": str(exc), "traceback": error_detail},
+        content={
+            "ok": False, 
+            "message": "Internal Server Error", 
+            "detail": str(exc), 
+            "traceback": error_detail
+        },
     )
+    
+    # Manually add CORS headers to ensure the browser doesn't block the debug info
+    origin = request.headers.get("origin")
+    if origin in origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    else:
+        # Fallback for debug
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        
+    return response
 
 @app.get("/")
 @limiter.limit("5/minute")
