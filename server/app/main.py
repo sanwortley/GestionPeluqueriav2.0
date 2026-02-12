@@ -28,7 +28,7 @@ def startup_event():
 # Security Middleware
 app.add_middleware(
     TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "romacabello.com.ar", "*.romacabello.com.ar", "render.com", "*.render.com"]
+    allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "romacabello.com.ar", "*.romacabello.com.ar", "onrender.com", "*.onrender.com"]
 )
 
 if settings.ENVIRONMENT == "production":
