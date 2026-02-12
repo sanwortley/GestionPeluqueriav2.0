@@ -19,10 +19,16 @@ app = FastAPI(title="Roma Cabello API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Scheduler
+from app.services.automated_tasks import start_scheduler
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
 # Security Middleware
 app.add_middleware(
     TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "render.com", "*.render.com"]
+    allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "romacabello.com.ar", "*.romacabello.com.ar", "render.com", "*.render.com"]
 )
 
 if settings.ENVIRONMENT == "production":
@@ -36,6 +42,8 @@ origins = [
     "http://127.0.0.1:5173",
     "https://roma-cabello-frontend.onrender.com",
     "https://roma-cabello.com",
+    "https://romacabello.com.ar",
+    "https://www.romacabello.com.ar",
 ]
 
 
