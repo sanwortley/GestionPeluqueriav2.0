@@ -49,14 +49,14 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
         client = Client(
             name=appt_in.client_name,
             phone=appt_in.client_phone,
-            # Email is not in AppointmentCreate currently, assumed optional or not captured yet
         )
         db.add(client)
-        db.flush() # Get ID without committing transaction yet
+        db.flush() # Get ID
     else:
-        # Update name if changed? Optional. Let's keep original for now or update it.
-        # client.name = appt_in.client_name 
-        pass
+        # If client already exists, update their name with the latest provided name
+        client.name = appt_in.client_name 
+        db.add(client)
+        db.flush()
 
     # 4. Create Appointment
     appt = Appointment(
