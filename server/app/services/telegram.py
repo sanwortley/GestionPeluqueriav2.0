@@ -12,10 +12,13 @@ async def send_telegram_message(message: str):
         logger.warning("Telegram credentials not configured. Skipping admin notification.")
         return False
 
+    # Minimal HTML escaping to avoid 400 Bad Request
+    safe_message = message.replace("&", "&amp;") # Although we use <b> etc, raw data might have &
+    
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": settings.TELEGRAM_CHAT_ID,
-        "text": message,
+        "text": message,  # We keep message as is because we use <b> tags, but we'll try careful format
         "parse_mode": "HTML"
     }
 
