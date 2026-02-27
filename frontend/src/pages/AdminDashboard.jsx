@@ -362,8 +362,9 @@ export default function AdminDashboard() {
                         <div style={{ marginBottom: '2rem' }}>
                             <h4 className="title" style={{ fontSize: '1.2rem', marginBottom: '1rem', textAlign: 'left' }}>Turnos y Bloqueos</h4>
                             {dayAppointments.length === 0 && <p className="text-muted">No hay actividad para este día.</p>}
-                            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                                <table style={{ width: '100%', marginTop: '0', minWidth: '450px' }}>
+                            {/* Desktop View: Table */}
+                            <div className="desktop-only" style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', marginTop: '0' }}>
                                     <thead>
                                         <tr>
                                             <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'left', width: '60px' }}>Hora</th>
@@ -486,6 +487,69 @@ export default function AdminDashboard() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {/* Mobile View: Cards */}
+                            <div className="mobile-only" style={{ display: 'none', flexDirection: 'column', gap: '1rem' }}>
+                                {dayAppointments.map(e => (
+                                    <div key={e.id} className="card" style={{ padding: '1rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <strong style={{ color: e.isBlock ? 'var(--danger)' : 'var(--primary)', fontSize: '1.2rem' }}>
+                                                {e.isBlock ? e.resource.start_time : format(e.start, 'HH:mm')}
+                                            </strong>
+                                            {!e.isBlock && (
+                                                <span style={{
+                                                    fontSize: '0.6rem',
+                                                    padding: '3px 8px',
+                                                    borderRadius: '12px',
+                                                    background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
+                                                        (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
+                                                            (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
+                                                    color: e.resource.status === 'CONFIRMED' ? '#34D399' :
+                                                        (e.resource.status === 'FINISHED' ? '#60A5FA' :
+                                                            (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
+                                                    fontWeight: 'bold',
+                                                    border: '1px solid currentColor'
+                                                }}>
+                                                    {e.resource.status}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {e.isBlock ? (
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <div style={{ fontWeight: 'bold', color: 'var(--danger)' }}>BLOQUEO</div>
+                                                <div style={{ opacity: 0.8 }}>{e.resource.reason}</div>
+                                            </div>
+                                        ) : (
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.2rem' }}>{e.resource.client_name}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#aaa' }}>{e.resource.service?.name}</div>
+                                                <div style={{ fontSize: '0.9rem', marginTop: '0.3rem', color: paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? '#10B981' : '#EF4444' }}>
+                                                    {paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'COBRADO' : 'IMPAGO'}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            {e.isBlock ? (
+                                                <button onClick={() => handleDeleteBlock(e.resource.id)} className="btn btn-danger w-full">Eliminar</button>
+                                            ) : (
+                                                <>
+                                                    {e.resource.status === 'PENDING' && (
+                                                        <>
+                                                            <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')} className="btn btn-danger" style={{ flex: 1 }}>Rechazar</button>
+                                                            <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#FBBF24', color: '#000' }}>Confirmar</button>
+                                                        </>
+                                                    )}
+                                                    {e.resource.status === 'CONFIRMED' && (
+                                                        <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')} className="btn btn-primary w-full" style={{ backgroundColor: '#10B981' }}>Cerrar Turno</button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

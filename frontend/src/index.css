@@ -257,6 +257,18 @@ table td {
   background: rgba(239, 68, 68, 0.1) !important;
 }
 
+@media (max-width: 992px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 993px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
 /* Decorative Barber Pole */
 .barber-pole-border {
   height: 8px;
