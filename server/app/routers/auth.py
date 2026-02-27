@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.db.session import SessionLocal
 from app.core.security import verify_password, create_access_token, get_password_hash
 from app.models.admin_user import AdminUser
-from app.schemas.auth import Token, AdminUserOut, PasswordUpdate
+from app.schemas.auth import Token, AdminUserOut, PasswordUpdate, EmailUpdate
 from app.core.deps import get_db, get_current_admin
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -38,3 +38,18 @@ def update_password(
     current_user.password_hash = get_password_hash(password_data.new_password)
     db.commit()
     return {"ok": True, "message": "Contraseña actualizada correctamente"}
+
+@router.post("/update-email")
+def update_email(
+    email_data: EmailUpdate,
+    db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(get_current_admin)
+):
+    # Check if email is already taken
+    existing_user = db.query(AdminUser).filter(AdminUser.email == email_data.new_email).first()
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(status_code=400, detail="El email ya está en uso")
+    
+    current_user.email = email_data.new_email
+    db.commit()
+    return {"ok": True, "message": "Email actualizado correctamente"}

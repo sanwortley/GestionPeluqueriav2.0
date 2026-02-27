@@ -18,3 +18,6 @@ class AdminUserOut(BaseModel):
 class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str
+
+class EmailUpdate(BaseModel):
+    new_email: EmailStr

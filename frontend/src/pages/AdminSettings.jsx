@@ -7,6 +7,7 @@ export default function AdminSettings() {
         new_password: '',
         confirm_password: ''
     });
+    const [newEmail, setNewEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -40,9 +41,53 @@ export default function AdminSettings() {
         }
     };
 
+    const handleUpdateEmail = async (e) => {
+        e.preventDefault();
+        setMessage({ type: '', text: '' });
+
+        try {
+            setLoading(true);
+            await api.post('/auth/update-email', {
+                new_email: newEmail
+            });
+            setMessage({ type: 'success', text: '✅ Email actualizado correctamente. Deberás usarlo en tu próximo inicio de sesión.' });
+            setNewEmail('');
+        } catch (err) {
+            const detail = err.response?.data?.detail || 'Error al actualizar el email';
+            setMessage({ type: 'error', text: detail });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="animate-fade-in" style={{ maxWidth: '500px', margin: '0 auto' }}>
             <h1 className="title">Configuración</h1>
+
+            <div className="card" style={{ marginBottom: '2rem' }}>
+                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Cambiar Email de Acceso</h2>
+                <form onSubmit={handleUpdateEmail}>
+                    <div className="form-group">
+                        <label className="label">Nuevo Email</label>
+                        <input
+                            type="email"
+                            className="input"
+                            required
+                            placeholder="ejemplo@correo.com"
+                            value={newEmail}
+                            onChange={e => setNewEmail(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginTop: '1rem', backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
+                        disabled={loading}
+                    >
+                        {loading ? 'Actualizando...' : 'Actualizar Email'}
+                    </button>
+                </form>
+            </div>
 
             <div className="card">
                 <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Cambiar Contraseña</h2>
