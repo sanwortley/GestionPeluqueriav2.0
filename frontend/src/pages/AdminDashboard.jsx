@@ -363,7 +363,7 @@ export default function AdminDashboard() {
                             <h4 className="title" style={{ fontSize: '1.2rem', marginBottom: '1rem', textAlign: 'left' }}>Turnos y Bloqueos</h4>
                             {dayAppointments.length === 0 && <p className="text-muted">No hay actividad para este día.</p>}
                             {/* Desktop View: Table */}
-                            <div className="desktop-only" style={{ overflowX: 'auto' }}>
+                            <div className="desktop-only">
                                 <table style={{ width: '100%', marginTop: '0' }}>
                                     <thead>
                                         <tr>
@@ -490,7 +490,7 @@ export default function AdminDashboard() {
                             </div>
 
                             {/* Mobile View: Cards */}
-                            <div className="mobile-only" style={{ display: 'none', flexDirection: 'column', gap: '1rem' }}>
+                            <div className="mobile-only" style={{ flexDirection: 'column', gap: '1rem' }}>
                                 {dayAppointments.map(e => (
                                     <div key={e.id} className="card" style={{ padding: '1rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
