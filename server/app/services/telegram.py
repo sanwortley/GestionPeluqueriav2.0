@@ -13,12 +13,18 @@ async def send_telegram_message(message: str):
         return False
 
     # Minimal HTML escaping to avoid 400 Bad Request
-    safe_message = message.replace("&", "&amp;") # Although we use <b> etc, raw data might have &
+    # Only escape characters that are NOT part of our intended <b>/<i> tags
+    # Since we control the template, we'll escape the dynamic parts in the service layer 
+    # OR just do it here carefully. 
+    safe_message = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # Restore our intended tags
+    safe_message = safe_message.replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
+    safe_message = safe_message.replace("&lt;i&gt;", "<i>").replace("&lt;/i&gt;", "</i>")
     
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": settings.TELEGRAM_CHAT_ID,
-        "text": message,  # We keep message as is because we use <b> tags, but we'll try careful format
+        "text": safe_message,
         "parse_mode": "HTML"
     }
 
