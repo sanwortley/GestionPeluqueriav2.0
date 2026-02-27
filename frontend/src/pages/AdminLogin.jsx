@@ -15,7 +15,7 @@ export default function AdminLogin() {
             formData.append('username', email);
             formData.append('password', password);
 
-            const res = await api.post('/auth/login', formData);
+            const res = await api.post('auth/login', formData);
             localStorage.setItem('token', res.data.access_token);
             navigate('/admin/dashboard');
         } catch (err) {

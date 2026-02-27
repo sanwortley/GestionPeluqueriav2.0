@@ -27,7 +27,7 @@ export default function AdminSettings() {
 
         try {
             setLoading(true);
-            await api.post('/auth/update-password', {
+            await api.post('auth/update-password', {
                 current_password: passwords.current_password,
                 new_password: passwords.new_password
             });
@@ -47,7 +47,7 @@ export default function AdminSettings() {
 
         try {
             setLoading(true);
-            await api.post('/auth/update-email', {
+            await api.post('auth/update-email', {
                 new_email: newEmail
             });
             setMessage({ type: 'success', text: '✅ Email actualizado correctamente. Deberás usarlo en tu próximo inicio de sesión.' });

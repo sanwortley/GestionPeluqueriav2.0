@@ -14,7 +14,7 @@ export default function AdminHistory() {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/appointments/');
+            const res = await api.get('appointments/');
             // Sort by date desc (Most recent first)
             const sorted = res.data.sort((a, b) => {
                 const dateA = new Date(a.date + 'T' + a.start_time);
@@ -31,7 +31,7 @@ export default function AdminHistory() {
 
     const togglePaid = async (id, currentPaid) => {
         try {
-            await api.patch(`/appointments/${id}/`, { is_paid: !currentPaid });
+            await api.patch(`appointments/${id}/`, { is_paid: !currentPaid });
             // Update local state
             setAppointments(appointments.map(a =>
                 a.id === id ? { ...a, is_paid: !currentPaid } : a
@@ -46,7 +46,7 @@ export default function AdminHistory() {
         try {
             if (!confirm(`¿Seguro que deseas cambiar el estado a ${newStatus === 'CANCELLED' ? 'CANCELADO' : 'CONFIRMADO'}?`)) return;
 
-            await api.patch(`/appointments/${id}/`, { status: newStatus });
+            await api.patch(`appointments/${id}/`, { status: newStatus });
             // Update local state
             setAppointments(appointments.map(a =>
                 a.id === id ? { ...a, status: newStatus } : a
@@ -61,7 +61,7 @@ export default function AdminHistory() {
         try {
             if (!confirm('¿Estás seguro de que deseas ELIMINAR este turno permanentemente del historial? Esta acción no se puede deshacer.')) return;
 
-            await api.delete(`/appointments/${id}/`);
+            await api.delete(`appointments/${id}/`);
             // Update local state
             setAppointments(appointments.filter(a => a.id !== id));
         } catch (err) {

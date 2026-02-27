@@ -38,8 +38,8 @@ export default function AdminDashboard() {
     const fetchAllData = async () => {
         try {
             const [apptsRes, blocksRes] = await Promise.all([
-                api.get('/appointments/'),
-                api.get('/blocks/')
+                api.get('appointments/'),
+                api.get('blocks/')
             ]);
 
             const apptEvents = apptsRes.data.map(appt => ({
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
         const start = format(subMonths(date, 1), 'yyyy-MM-dd');
         const end = format(addMonths(date, 1), 'yyyy-MM-dd');
         try {
-            const res = await api.get(`/availability/?from=${start}&to=${end}`);
+            const res = await api.get(`availability/?from=${start}&to=${end}`);
             const map = {};
             res.data.forEach(d => {
                 map[d.date] = d;
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
     const handleDeleteBlock = async (id) => {
         if (!confirm('¿Seguro que deseas eliminar este bloqueo?')) return;
         try {
-            await api.delete(`/blocks/${id}/`);
+            await api.delete(`blocks/${id}/`);
             alert('Bloqueo eliminado');
             fetchAllData(); // Refresh everything
         } catch (err) {
@@ -155,12 +155,12 @@ export default function AdminDashboard() {
 
             if (status === 'CANCELLED') {
                 if (!confirm('¿Seguro que deseas cancelar este turno?')) return;
-                await api.put(`/appointments/${id}/cancel/`);
+                await api.put(`appointments/${id}/cancel/`);
             } else if (status === 'FINISHED') {
                 const isPaid = paidStatus[id] || false;
-                await api.put(`/appointments/${id}/finish/?is_paid=${isPaid}`);
+                await api.put(`appointments/${id}/finish/?is_paid=${isPaid}`);
             } else if (status === 'CONFIRMED') {
-                await api.put(`/appointments/${id}/confirm/`);
+                await api.put(`appointments/${id}/confirm/`);
             } else {
                 return;
             }
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
         if (!selectedDate) return;
         try {
             const d = format(selectedDate, 'yyyy-MM-dd');
-            await api.put(`/availability/${d}/`, {
+            await api.put(`availability/${d}/`, {
                 enabled,
                 slot_size_min: slotSize,
                 ranges,
