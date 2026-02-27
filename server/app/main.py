@@ -75,6 +75,12 @@ async def general_exception_handler(request: Request, exc: Exception):
 def read_root(request: Request):
     return {"ok": True, "message": "Roma Cabello API is running"}
 
+@app.get("/api/test-telegram")
+def test_telegram():
+    from app.services.telegram import send_telegram_sync
+    success = send_telegram_sync("🔔 Mensaje de prueba desde el Servidor de Roma Cabello")
+    return {"ok": success, "message": "Enviado" if success else "Error al enviar. Revisa los logs de Render."}
+
 # Include Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(services.router, prefix="/api/services", tags=["Services"])
