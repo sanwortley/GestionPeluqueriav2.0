@@ -76,7 +76,15 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
     db.commit()
     db.refresh(appt)
     
-    # Notify Client (Request Received)
+    # Notify Admin (Telegram) - First to avoid delays if WhatsApp bridge is down
+    admin_msg = (f"<b>🚨 ¡NUEVA SOLICITUD DE TURNO! 🚨</b>\n\n"
+                 f"👤 <b>Cliente:</b> {appt.client_name}\n"
+                 f"📞 <b>Tel:</b> {appt.client_phone}\n"
+                 f"📅 <b>Fecha:</b> {appt.date}\n"
+                 f"🕒 <b>Hora:</b> {appt.start_time}\n"
+                 f"✨ <b>Servicio:</b> {service.name}")
+    send_telegram_sync(admin_msg)
+
     # Notify Client (Request Received)
     client_msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
                   f"📅 Fecha: {appt.date}\n"
@@ -85,15 +93,6 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
                   f"✅ *Tu turno ha sido registrado correctamente.*\n"
                   f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
     send_whatsapp_sync(appt.client_phone, client_msg)
-    
-    # Notify Admin (Telegram)
-    admin_msg = (f"<b>🚨 ¡NUEVA SOLICITUD DE TURNO! 🚨</b>\n\n"
-                 f"👤 <b>Cliente:</b> {appt.client_name}\n"
-                 f"📞 <b>Tel:</b> {appt.client_phone}\n"
-                 f"📅 <b>Fecha:</b> {appt.date}\n"
-                 f"🕒 <b>Hora:</b> {appt.start_time}\n"
-                 f"✨ <b>Servicio:</b> {service.name}")
-    send_telegram_sync(admin_msg)
     
     return appt
 

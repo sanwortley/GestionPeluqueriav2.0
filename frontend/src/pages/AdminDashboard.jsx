@@ -362,129 +362,131 @@ export default function AdminDashboard() {
                         <div style={{ marginBottom: '2rem' }}>
                             <h4 className="title" style={{ fontSize: '1.2rem', marginBottom: '1rem', textAlign: 'left' }}>Turnos y Bloqueos</h4>
                             {dayAppointments.length === 0 && <p className="text-muted">No hay actividad para este día.</p>}
-                            <table style={{ width: '100%', marginTop: '0' }}>
-                                <thead>
-                                    <tr>
-                                        <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'left' }}>Hora</th>
-                                        <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'left' }}>Cliente / Servicio</th>
-                                        <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'center' }}>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {dayAppointments.map(e => (
-                                        <tr key={e.id}>
-                                            <td style={{ verticalAlign: 'top', width: '80px' }}>
-                                                <strong style={{ color: e.isBlock ? 'var(--danger)' : 'var(--primary)', fontSize: '1.1rem' }}>
-                                                    {e.isBlock ? e.resource.start_time : format(e.start, 'HH:mm')}
-                                                </strong>
-                                            </td>
-                                            <td>
-                                                {e.isBlock ? (
-                                                    <div>
-                                                        <div style={{ fontWeight: 'bold', color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '1px' }}>BLOQUEO</div>
-                                                        <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{e.resource.reason || 'Sin motivo'}</div>
-                                                    </div>
-                                                ) : (
-                                                    <div>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '1rem' }}>
-                                                            <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', lineHeight: '1.2' }}>{e.resource.client_name}</span>
-                                                            <span style={{
-                                                                fontSize: '0.6rem',
-                                                                padding: '3px 8px',
-                                                                borderRadius: '12px',
-                                                                background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
-                                                                    (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
-                                                                        (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
-                                                                color: e.resource.status === 'CONFIRMED' ? '#34D399' :
-                                                                    (e.resource.status === 'FINISHED' ? '#60A5FA' :
-                                                                        (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
-                                                                fontWeight: 'bold',
-                                                                textTransform: 'uppercase',
-                                                                border: '1px solid currentColor',
-                                                                whiteSpace: 'nowrap',
-                                                                flexShrink: 0
-                                                            }}>
-                                                                {e.resource.status === 'CONFIRMED' ? 'CONFIRMADO' :
-                                                                    e.resource.status === 'FINISHED' ? 'FINALIZADO' :
-                                                                        e.resource.status === 'PENDING' ? 'PENDIENTE' : 'CANCELADO'}
-                                                            </span>
+                            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                <table style={{ width: '100%', marginTop: '0', minWidth: '450px' }}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'left', width: '60px' }}>Hora</th>
+                                            <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'left' }}>Cliente / Servicio</th>
+                                            <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'center', width: '140px' }}>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {dayAppointments.map(e => (
+                                            <tr key={e.id}>
+                                                <td style={{ verticalAlign: 'top', width: '80px' }}>
+                                                    <strong style={{ color: e.isBlock ? 'var(--danger)' : 'var(--primary)', fontSize: '1.1rem' }}>
+                                                        {e.isBlock ? e.resource.start_time : format(e.start, 'HH:mm')}
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    {e.isBlock ? (
+                                                        <div>
+                                                            <div style={{ fontWeight: 'bold', color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '1px' }}>BLOQUEO</div>
+                                                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{e.resource.reason || 'Sin motivo'}</div>
                                                         </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                <i className="fas fa-cut" style={{ width: '16px', textAlign: 'center' }}></i> {e.resource.service?.name}
-                                                            </span>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? '#10B981' : '#EF4444' }}>
-                                                                <i className={`fas ${paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ width: '16px', textAlign: 'center' }}></i>
-                                                                {paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'COBRADO' : 'IMPAGO'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td style={{ textAlign: 'center', width: '180px' }}>
-                                                {e.isBlock ? (
-                                                    <button
-                                                        onClick={() => handleDeleteBlock(e.resource.id)}
-                                                        className="btn btn-danger btn-sm"
-                                                        style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}
-                                                    >
-                                                        Eliminar
-                                                    </button>
-                                                ) : (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                                        {e.resource.status === 'PENDING' && (
-                                                            <div style={{ display: 'flex', gap: '0.3rem' }}>
-                                                                <button
-                                                                    onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
-                                                                    className="btn btn-danger btn-sm"
-                                                                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
-                                                                >
-                                                                    Rechazar
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')}
-                                                                    className="btn btn-primary btn-sm"
-                                                                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#FBBF24', borderColor: '#FBBF24', color: '#000' }}
-                                                                >
-                                                                    Confirmar
-                                                                </button>
+                                                    ) : (
+                                                        <div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '1rem' }}>
+                                                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', lineHeight: '1.2' }}>{e.resource.client_name}</span>
+                                                                <span style={{
+                                                                    fontSize: '0.6rem',
+                                                                    padding: '3px 8px',
+                                                                    borderRadius: '12px',
+                                                                    background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
+                                                                        (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
+                                                                            (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
+                                                                    color: e.resource.status === 'CONFIRMED' ? '#34D399' :
+                                                                        (e.resource.status === 'FINISHED' ? '#60A5FA' :
+                                                                            (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
+                                                                    fontWeight: 'bold',
+                                                                    textTransform: 'uppercase',
+                                                                    border: '1px solid currentColor',
+                                                                    whiteSpace: 'nowrap',
+                                                                    flexShrink: 0
+                                                                }}>
+                                                                    {e.resource.status === 'CONFIRMED' ? 'CONFIRMADO' :
+                                                                        e.resource.status === 'FINISHED' ? 'FINALIZADO' :
+                                                                            e.resource.status === 'PENDING' ? 'PENDIENTE' : 'CANCELADO'}
+                                                                </span>
                                                             </div>
-                                                        )}
-                                                        {e.resource.status === 'CONFIRMED' && (
-                                                            <>
-                                                                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid || false}
-                                                                        onChange={(ev) => setPaidStatus({ ...paidStatus, [e.id.replace('appt-', '')]: ev.target.checked })}
-                                                                    />
-                                                                    ¿Pagado?
-                                                                </label>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>
+                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                    <i className="fas fa-cut" style={{ width: '16px', textAlign: 'center' }}></i> {e.resource.service?.name}
+                                                                </span>
+                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? '#10B981' : '#EF4444' }}>
+                                                                    <i className={`fas ${paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ width: '16px', textAlign: 'center' }}></i>
+                                                                    {paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'COBRADO' : 'IMPAGO'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td style={{ textAlign: 'center', width: '180px' }}>
+                                                    {e.isBlock ? (
+                                                        <button
+                                                            onClick={() => handleDeleteBlock(e.resource.id)}
+                                                            className="btn btn-danger btn-sm"
+                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}
+                                                        >
+                                                            Eliminar
+                                                        </button>
+                                                    ) : (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                            {e.resource.status === 'PENDING' && (
                                                                 <div style={{ display: 'flex', gap: '0.3rem' }}>
                                                                     <button
                                                                         onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
                                                                         className="btn btn-danger btn-sm"
                                                                         style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
                                                                     >
-                                                                        Anular
+                                                                        Rechazar
                                                                     </button>
                                                                     <button
-                                                                        onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')}
+                                                                        onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')}
                                                                         className="btn btn-primary btn-sm"
-                                                                        style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#10B981', borderColor: '#10B981' }}
+                                                                        style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#FBBF24', borderColor: '#FBBF24', color: '#000' }}
                                                                     >
-                                                                        Cerrar
+                                                                        Confirmar
                                                                     </button>
                                                                 </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                                            )}
+                                                            {e.resource.status === 'CONFIRMED' && (
+                                                                <>
+                                                                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid || false}
+                                                                            onChange={(ev) => setPaidStatus({ ...paidStatus, [e.id.replace('appt-', '')]: ev.target.checked })}
+                                                                        />
+                                                                        ¿Pagado?
+                                                                    </label>
+                                                                    <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                                        <button
+                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
+                                                                            className="btn btn-danger btn-sm"
+                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
+                                                                        >
+                                                                            Anular
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')}
+                                                                            className="btn btn-primary btn-sm"
+                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#10B981', borderColor: '#10B981' }}
+                                                                        >
+                                                                            Cerrar
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 ) : (
