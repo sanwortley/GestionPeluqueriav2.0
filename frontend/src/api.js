@@ -3,7 +3,7 @@ import axios from 'axios';
 const getBaseUrl = () => {
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
     if (import.meta.env.VITE_API_URL_HOST) return `https://${import.meta.env.VITE_API_URL_HOST}`;
-    return 'http://localhost:8000/api';
+    return 'http://localhost:8001/api';
 };
 
 const api = axios.create({

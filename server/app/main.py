@@ -25,11 +25,11 @@ from app.services.automated_tasks import start_scheduler
 def startup_event():
     start_scheduler()
 
-# Security Middleware
-app.add_middleware(
-    TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "romacabello.com.ar", "*.romacabello.com.ar", "onrender.com", "*.onrender.com"]
-)
+# Security Middleware (Temporarily disabled to fix CORS issue)
+# app.add_middleware(
+#     TrustedHostMiddleware, 
+#     allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "romacabello.com.ar", "*.romacabello.com.ar", "onrender.com", "*.onrender.com"]
+# )
 
 if settings.ENVIRONMENT == "production":
     app.add_middleware(HTTPSRedirectMiddleware)
@@ -57,21 +57,34 @@ app.add_middleware(
 # Exception Handlers
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(
+    response = JSONResponse(
         status_code=422,
         content={"ok": False, "message": "Validation Error", "errors": exc.errors()},
     )
+    # Ensure CORS headers are present even on validation errors
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     # Log the exception here in a real production environment
-    return JSONResponse(
+    print(f"ERROR: {exc}")
+    response = JSONResponse(
         status_code=500,
-        content={"ok": False, "message": "Internal Server Error"},
+        content={"ok": False, "message": "Internal Server Error", "detail": str(exc)},
     )
+    # Ensure CORS headers are present even on errors
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 @app.get("/")
-@limiter.limit("5/minute")
+@limiter.limit("60/minute")
 def read_root(request: Request):
     return {"ok": True, "message": "Roma Cabello API is running"}
 

@@ -13,6 +13,7 @@ export default function ClientBooking() {
     const [slots, setSlots] = useState([]);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [blocks, setBlocks] = useState([]);
+    const [availability, setAvailability] = useState([]);
 
     const [clientName, setClientName] = useState('');
     const [clientPhone, setClientPhone] = useState('');
@@ -24,6 +25,7 @@ export default function ClientBooking() {
     useEffect(() => {
         fetchServices();
         fetchBlocks();
+        fetchAvailability();
     }, []);
 
     const [existingClientMsg, setExistingClientMsg] = useState('');
@@ -45,6 +47,23 @@ export default function ClientBooking() {
         try {
             const res = await api.get('blocks/');
             setBlocks(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchAvailability = async () => {
+        try {
+            const today = startOfToday();
+            const start = startOfWeek(today, { weekStartsOn: 1 });
+            const end = endOfWeek(addDays(today, 14), { weekStartsOn: 1 });
+            const res = await api.get('availability/', {
+                params: {
+                    from: format(start, 'yyyy-MM-dd'),
+                    to: format(end, 'yyyy-MM-dd')
+                }
+            });
+            setAvailability(res.data);
         } catch (err) {
             console.error(err);
         }
@@ -123,7 +142,7 @@ export default function ClientBooking() {
             alert('Turno confirmado!');
             // Reset to start
             setStep(1);
-            setSelectedDate(new Date());
+            setSelectedDate(null);
             setSelectedService(null);
             setSelectedSlot(null);
             setClientName('');
@@ -249,7 +268,11 @@ export default function ClientBooking() {
                                     const block = blocks.find(b => dateStr >= b.start_date && dateStr <= b.end_date);
                                     const isBlocked = !!block;
                                     const isPast = day < today;
-                                    const isDisabled = isPast || isBlocked;
+
+                                    const avail = availability.find(a => a.date === dateStr);
+                                    const hasAvailability = avail && avail.enabled && avail.ranges.length > 0;
+
+                                    const isDisabled = isPast || isBlocked || (!isPast && !hasAvailability);
                                     const isSelected = selectedDate && format(day, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
                                     const isTodayDay = format(day, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
 
@@ -257,7 +280,7 @@ export default function ClientBooking() {
                                         <button
                                             key={idx}
                                             disabled={isDisabled}
-                                            title={isBlocked ? (block.reason || 'Cerrado') : ''}
+                                            title={isBlocked ? (block.reason || 'Cerrado') : (!hasAvailability && !isPast ? 'Sin turnos disponibles' : '')}
                                             onClick={() => {
                                                 setSelectedDate(day);
                                                 setStep(2);
@@ -268,15 +291,18 @@ export default function ClientBooking() {
                                                 flexDirection: 'column',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                background: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
-                                                border: isSelected ? '1px solid var(--primary)' : '1px solid transparent',
-                                                borderRadius: '2px',
+                                                background: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                                                border: isSelected ? '2px solid var(--primary)' : '1px solid rgba(255, 255, 255, 0.05)',
+                                                borderRadius: '4px',
                                                 cursor: isDisabled ? 'not-allowed' : 'pointer',
-                                                opacity: isPast ? 0.15 : (isBlocked ? 0.4 : 1),
-                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                color: isSelected ? '#000' : 'var(--text-main)',
+                                                opacity: isPast ? 0.15 : (isBlocked || !hasAvailability ? 0.4 : 1),
+                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                color: 'var(--text-main)',
                                                 position: 'relative',
-                                                overflow: 'hidden'
+                                                overflow: 'hidden',
+                                                transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                                                zIndex: isSelected ? 2 : 1,
+                                                boxShadow: isSelected ? '0 0 20px rgba(255, 255, 255, 0.1)' : 'none'
                                             }}
                                         >
                                             <span style={{ fontSize: '1.5rem', fontFamily: "'Staatliches', sans-serif", color: isBlocked && !isSelected ? '#666' : 'inherit' }}>{format(day, 'd')}</span>
@@ -312,6 +338,17 @@ export default function ClientBooking() {
                                                 </div>
                                             )}
 
+                                            {!isBlocked && !hasAvailability && !isPast && !isSelected && (
+                                                <div style={{
+                                                    fontSize: '0.55rem',
+                                                    color: '#666',
+                                                    marginTop: '4px',
+                                                    fontWeight: 'normal'
+                                                }}>
+                                                    Sin turnos
+                                                </div>
+                                            )}
+
                                             {isBlocked && !isSelected && (
                                                 <div style={{
                                                     position: 'absolute',
@@ -328,7 +365,27 @@ export default function ClientBooking() {
                                 });
                             })()}
                         </div>
-                        <p className="subtitle" style={{ marginTop: '2rem', textAlign: 'center', fontSize: '1rem' }}>
+                        <div style={{
+                            display: 'flex',
+                            gap: '1.5rem',
+                            justifyContent: 'center',
+                            marginTop: '2rem',
+                            flexWrap: 'wrap',
+                            padding: '1rem',
+                            background: 'rgba(255,255,255,0.02)',
+                            borderRadius: '4px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                                <div style={{ width: '12px', height: '12px', background: 'var(--primary)', borderRadius: '2px' }}></div>
+                                <span>Disponible</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
+                                <div style={{ width: '12px', height: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid #333', borderRadius: '2px', opacity: 0.4 }}></div>
+                                <span>Sin turnos / Cerrado</span>
+                            </div>
+                        </div>
+
+                        <p className="subtitle" style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '1rem' }}>
                             Seleccioná un día disponible para ver los servicios.
                         </p>
                     </div>

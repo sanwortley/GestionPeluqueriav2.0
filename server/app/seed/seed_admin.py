@@ -4,8 +4,8 @@ from app.core.security import get_password_hash
 
 def seed_admin():
     db = SessionLocal()
-    email = "admin@romacabello.com"
-    password = "admin"
+    email = "admin@roma.com"
+    password = "roma2024"
     
     existing = db.query(AdminUser).filter(AdminUser.email == email).first()
     if not existing:
