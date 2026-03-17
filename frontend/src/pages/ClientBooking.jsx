@@ -21,6 +21,34 @@ export default function ClientBooking() {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [formErrors, setFormErrors] = useState({});
+
+    const validatePhone = (phone) => {
+        // Remove spaces and hyphens
+        const cleaned = phone.replace(/[\s\-\.]/g, '');
+        // Must be 8-12 digits, and not all same digit (e.g. 111111111)
+        if (!/^\d{8,12}$/.test(cleaned)) {
+            return 'Ingresá un número válido (entre 8 y 12 dígitos).';
+        }
+        if (/^(\d)\1{6,}$/.test(cleaned)) {
+            return 'El teléfono no parece válido.';
+        }
+        return null;
+    };
+
+    const validateName = (name) => {
+        const trimmed = name.trim();
+        if (trimmed.length < 3) {
+            return 'El nombre debe tener al menos 3 letras.';
+        }
+        if (/\d/.test(trimmed)) {
+            return 'El nombre no puede contener números.';
+        }
+        if (/^[^a-zA-Zà-ž]+$/.test(trimmed)) {
+            return 'Ingresá un nombre real.';
+        }
+        return null;
+    };
 
     useEffect(() => {
         fetchServices();
@@ -128,6 +156,15 @@ export default function ClientBooking() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const phoneError = validatePhone(clientPhone);
+        const nameError = validateName(clientName);
+        if (phoneError || nameError) {
+            setFormErrors({ phone: phoneError, name: nameError });
+            return;
+        }
+        setFormErrors({});
+
         try {
             setLoading(true);
             await api.post('appointments/', {
@@ -451,9 +488,12 @@ export default function ClientBooking() {
                                         value={clientPhone}
                                         onChange={e => setClientPhone(e.target.value)}
                                         onBlur={handlePhoneBlur}
-                                        placeholder="Ingresá tu celular"
+                                        placeholder="Ej: 3516123456"
                                         required
                                     />
+                                    {formErrors.phone && (
+                                        <p style={{ color: '#ff4444', fontSize: '0.82rem', marginTop: '0.4rem' }}>{formErrors.phone}</p>
+                                    )}
                                     {existingClientMsg && (
                                         <p style={{ color: 'var(--primary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>{existingClientMsg}</p>
                                     )}
@@ -467,6 +507,9 @@ export default function ClientBooking() {
                                         onChange={e => setClientName(e.target.value)}
                                         required
                                     />
+                                    {formErrors.name && (
+                                        <p style={{ color: '#ff4444', fontSize: '0.82rem', marginTop: '0.4rem' }}>{formErrors.name}</p>
+                                    )}
                                 </div>
                                 <div className="form-group">
                                     <label className="label">Nota (Opcional)</label>
