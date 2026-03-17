@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     TIMEZONE: str = "America/Argentina/Cordoba"
 
     # WhatsApp (Bridge Local)
-    WHATSAPP_BRIDGE_URL: str = "http://localhost:3001"
+    WHATSAPP_BRIDGE_URL: str = ""
     ADMIN_PHONE: str = ""
 
     # Telegram
