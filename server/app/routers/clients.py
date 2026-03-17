@@ -23,4 +23,29 @@ def get_clients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     Admin only: List all clients.
     """
-    return db.query(Client).offset(skip).limit(limit).all()
+    return db.query(Client).order_by(Client.created_at.desc()).offset(skip).limit(limit).all()
+
+@router.put("/{client_id}", response_model=ClientSchema, dependencies=[Depends(get_current_admin)])
+def update_client(client_id: int, client_in: ClientSchema, db: Session = Depends(get_db)):
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    update_data = client_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(client, field, value)
+        
+    db.add(client)
+    db.commit()
+    db.refresh(client)
+    return client
+
+@router.delete("/{client_id}", dependencies=[Depends(get_current_admin)])
+def delete_client(client_id: int, db: Session = Depends(get_db)):
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    db.delete(client)
+    db.commit()
+    return {"ok": True}

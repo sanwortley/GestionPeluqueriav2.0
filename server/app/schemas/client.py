@@ -10,6 +10,11 @@ class ClientBase(BaseModel):
 class ClientCreate(ClientBase):
     pass
 
+class ClientUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+
 class Client(ClientBase):
     id: int
     created_at: datetime

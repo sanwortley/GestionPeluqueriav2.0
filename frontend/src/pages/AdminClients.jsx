@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { format } from 'date-fns';
+import { Pencil, Trash2, X, Check } from 'lucide-react';
 
 export default function AdminClients() {
     const [clients, setClients] = useState([]);
@@ -21,6 +22,39 @@ export default function AdminClients() {
         }
     };
 
+    const [editingClient, setEditingClient] = useState(null);
+    const [editForm, setEditForm] = useState({ name: '', phone: '', email: '' });
+
+    const handleEditClick = (client) => {
+        setEditingClient(client);
+        setEditForm({
+            name: client.name,
+            phone: client.phone,
+            email: client.email || ''
+        });
+    };
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await api.put(`clients/${editingClient.id}`, editForm);
+            setClients(clients.map(c => c.id === editingClient.id ? res.data : c));
+            setEditingClient(null);
+        } catch (err) {
+            alert("Error al actualizar cliente");
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("¿Estás seguro de que querés eliminar este cliente?")) return;
+        try {
+            await api.delete(`clients/${id}`);
+            setClients(clients.filter(c => c.id !== id));
+        } catch (err) {
+            alert("Error al eliminar cliente");
+        }
+    };
+
     if (loading) return <div className="p-4 text-white">Cargando clientes...</div>;
 
     return (
@@ -35,8 +69,8 @@ export default function AdminClients() {
                                 <th>ID</th>
                                 <th>Nombre</th>
                                 <th>Teléfono</th>
-                                <th>Email</th>
                                 <th>Registrado</th>
+                                <th style={{ textAlign: 'right' }}>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,9 +79,26 @@ export default function AdminClients() {
                                     <td>#{client.id}</td>
                                     <td style={{ fontWeight: 'bold' }}>{client.name}</td>
                                     <td className="text-muted">{client.phone}</td>
-                                    <td className="text-muted">{client.email || '-'}</td>
                                     <td className="text-muted">
                                         {client.created_at ? format(new Date(client.created_at), 'dd/MM/yyyy') : '-'}
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                            <button 
+                                                onClick={() => handleEditClick(client)}
+                                                className="btn-icon"
+                                                title="Editar"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(client.id)}
+                                                className="btn-icon btn-icon-danger"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -62,6 +113,53 @@ export default function AdminClients() {
                     </table>
                 </div>
             </div>
+
+            {editingClient && (
+                <div className="modal-overlay">
+                    <div className="modal-content animate-slide-up" style={{ maxWidth: '320px' }}>
+                        <div className="modal-header" style={{ padding: '0.9rem 1.2rem' }}>
+                            <h2 style={{ fontSize: '1rem', margin: 0 }}>Editar Cliente</h2>
+                            <button onClick={() => setEditingClient(null)} className="btn-close">
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdate}>
+                            <div style={{ padding: '1rem 1.2rem' }}>
+                                <div className="form-group">
+                                    <label className="label" style={{ fontSize: '0.8rem' }}>Nombre</label>
+                                    <input 
+                                        type="text" 
+                                        className="input"
+                                        style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}
+                                        value={editForm.name}
+                                        onChange={e => setEditForm({...editForm, name: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="label" style={{ fontSize: '0.8rem' }}>Teléfono</label>
+                                    <input 
+                                        type="tel" 
+                                        className="input"
+                                        style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem' }}
+                                        value={editForm.phone}
+                                        onChange={e => setEditForm({...editForm, phone: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div style={{ padding: '0.9rem 1.2rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                                <button type="button" onClick={() => setEditingClient(null)} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                                    Cancelar
+                                </button>
+                                <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}>
+                                    Guardar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
