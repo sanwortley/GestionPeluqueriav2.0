@@ -30,6 +30,7 @@ class AppointmentCreate(BaseModel):
     client_phone: str
     note: Optional[str] = None
     is_paid: bool = False
+    turnstile_token: Optional[str] = None # <-- Agregar esto
 
 class AppointmentReschedule(BaseModel):
     date: date

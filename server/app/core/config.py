@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
 
+    # Cloudflare Turnstile
+    CLOUDFLARE_TURNSTILE_SECRET_KEY: str = ""
+
     class Config:
         case_sensitive = True
         env_file = ".env"

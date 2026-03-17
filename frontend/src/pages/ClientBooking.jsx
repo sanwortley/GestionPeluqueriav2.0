@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { format, parse, startOfWeek, getDay, addDays, eachDayOfInterval, endOfWeek, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import api from '../api';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function ClientBooking() {
     const [step, setStep] = useState(1);
@@ -22,6 +23,7 @@ export default function ClientBooking() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formErrors, setFormErrors] = useState({});
+    const [turnstileToken, setTurnstileToken] = useState(null);
 
     const validatePhone = (phone) => {
         // Remove spaces and hyphens
@@ -174,7 +176,8 @@ export default function ClientBooking() {
                 staff_id: selectedStaff?.id,
                 client_name: clientName,
                 client_phone: clientPhone,
-                note: note
+                note: note,
+                turnstile_token: turnstileToken
             });
             alert('Turno confirmado!');
             // Reset to start
@@ -307,7 +310,7 @@ export default function ClientBooking() {
                                     const isPast = day < today;
 
                                     const avail = availability.find(a => a.date === dateStr);
-                                    const hasAvailability = avail && avail.enabled && avail.ranges.length > 0;
+                                    const hasAvailability = avail && avail.enabled && avail.ranges.length > 0 && avail.has_slots;
 
                                     const isDisabled = isPast || isBlocked || (!isPast && !hasAvailability);
                                     const isSelected = selectedDate && format(day, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
@@ -517,6 +520,12 @@ export default function ClientBooking() {
                                         className="input"
                                         value={note}
                                         onChange={e => setNote(e.target.value)}
+                                    />
+                                </div>
+                                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                                    <Turnstile 
+                                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"} 
+                                        onSuccess={(token) => setTurnstileToken(token)} 
                                     />
                                 </div>
                                 <button type="submit" className="btn btn-primary" disabled={loading}>

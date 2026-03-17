@@ -24,7 +24,33 @@ def get_availability(
     else:
         query = query.filter(AvailabilityDay.staff_id.is_(None))
         
-    return query.all()
+    days = query.all()
+    
+    # 1. Encontrar el servicio más corto (Heurística)
+    from app.models.service import Service
+    min_service = db.query(Service).order_by(Service.duration_min).first()
+    min_service_id = min_service.id if min_service else None
+    
+    if not min_service_id:
+        # Si no hay servicios, todos están sin turnos (ej. instalación limpia)
+        for d in days:
+            setattr(d, "has_slots", False)
+        return days
+
+    from app.services.slot_generator import generate_slots
+    
+    for d in days:
+        has_slots = False
+        if d.enabled and d.ranges:
+            slots = generate_slots(db, d.date, min_service_id, staff_id)
+            has_slots = len(slots) > 0
+        else:
+            # Si está deshabilitado o no tiene rangos, has_slots es False
+            has_slots = False
+        
+        setattr(d, "has_slots", has_slots)
+        
+    return days
 
 @router.put("/{date_str}", response_model=AvailabilityOut, dependencies=[Depends(get_current_admin)])
 def update_availability(

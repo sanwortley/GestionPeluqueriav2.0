@@ -25,6 +25,7 @@ class AvailabilityOut(AvailabilityBase):
     id: int
     date: date
     ranges: List[RangeSchema]
+    has_slots: bool = True # <-- Agregar esto
 
     class Config:
         from_attributes = True

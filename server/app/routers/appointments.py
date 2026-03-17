@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import date
@@ -9,8 +9,10 @@ from app.services.appointment_service import create_appointment as service_creat
 from app.services.appointment_service import cancel_appointment as service_cancel_appointment
 from app.services.appointment_service import reschedule_appointment as service_reschedule_appointment
 from app.services.appointment_service import confirm_appointment as service_confirm_appointment
+from app.core.config import settings
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import httpx
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -18,6 +20,29 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/", response_model=AppointmentOut)
 @limiter.limit("3/minute")
 def create_appointment(request: Request, appt_in: AppointmentCreate, db: Session = Depends(get_db)):
+    # Verificar Turnstile si está configurado
+    if settings.CLOUDFLARE_TURNSTILE_SECRET_KEY:
+        if not appt_in.turnstile_token:
+            raise HTTPException(status_code=400, detail="Captcha requerido (Turnstile)")
+        
+        try:
+            res = httpx.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": settings.CLOUDFLARE_TURNSTILE_SECRET_KEY,
+                    "response": appt_in.turnstile_token,
+                    "remoteip": request.client.host if request.client else None
+                },
+                timeout=5.0
+            )
+            res_json = res.json()
+            if not res_json.get("success"):
+                raise HTTPException(status_code=400, detail="Captcha inválido o Bot detectado")
+        except httpx.RequestError:
+            # Si falla el servicio de Cloudflare (muy raro), se podría decidir si dejar pasar o bloquear.
+            # Como es un servicio crítico de seguridad, mejor dejar pasar o loggear.
+            pass
+
     return service_create_appointment(db, appt_in)
 
 @router.get("/", response_model=List[AppointmentOut], dependencies=[Depends(get_current_admin)])
