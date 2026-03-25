@@ -194,6 +194,15 @@ export default function ClientBooking() {
         }
     };
 
+    const getMonthDisplay = () => {
+        const today = startOfToday();
+        const start = startOfWeek(today, { weekStartsOn: 1 });
+        const end = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+        const days = eachDayOfInterval({ start, end });
+        const months = [...new Set(days.map(d => format(d, 'MMMM', { locale: es })))];
+        return months.map(m => m.charAt(0).toUpperCase() + m.slice(1)).join(' - ');
+    };
+
     return (
         <div className="booking-page">
 
@@ -279,7 +288,7 @@ export default function ClientBooking() {
 
             <div id="calendario" style={{ paddingTop: step === 1 ? '2rem' : '0' }}>
                 <h2 className="title" style={{ fontSize: '1.8rem', marginBottom: '2rem' }}>
-                    {step === 1 ? 'Elegí tu fecha' :
+                    {step === 1 ? `Elegí tu fecha (${getMonthDisplay()})` :
                         step === 2 ? 'Seleccioná el servicio' :
                             step === 3 ? 'Buscá tu horario' : 'Confirmá tus datos'}
                 </h2>
@@ -345,46 +354,20 @@ export default function ClientBooking() {
                                                 boxShadow: isSelected ? '0 0 20px rgba(255, 255, 255, 0.1)' : 'none'
                                             }}
                                         >
-                                            <span style={{ fontSize: '1.5rem', fontFamily: "'Staatliches', sans-serif", color: isBlocked && !isSelected ? '#666' : 'inherit' }}>{format(day, 'd')}</span>
-
-                                            {format(day, 'd') === '1' && (
-                                                <span style={{ fontSize: '0.6rem', position: 'absolute', top: '4px', opacity: 0.8 }}>{format(day, 'MMM', { locale: es }).toUpperCase()}</span>
-                                            )}
+                                            <span className="cal-day-num" style={{ color: isBlocked && !isSelected ? '#666' : 'inherit' }}>{format(day, 'd')}</span>
 
                                             {isTodayDay && !isSelected && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    bottom: '8px',
-                                                    width: '4px',
-                                                    height: '4px',
-                                                    borderRadius: '50%',
-                                                    background: 'var(--primary)',
-                                                    boxShadow: '0 0 5px var(--primary)'
-                                                }}></div>
+                                                <div className="cal-today-dot"></div>
                                             )}
 
                                             {isBlocked && !isSelected && (
-                                                <div style={{
-                                                    fontSize: '0.55rem',
-                                                    color: 'var(--text-muted)',
-                                                    fontStyle: 'italic',
-                                                    marginTop: '4px',
-                                                    maxWidth: '90%',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap'
-                                                }}>
+                                                <div className="cal-day-status cal-day-blocked">
                                                     {block.reason || 'Cerrado'}
                                                 </div>
                                             )}
 
                                             {!isBlocked && !hasAvailability && !isPast && !isSelected && (
-                                                <div style={{
-                                                    fontSize: '0.55rem',
-                                                    color: '#666',
-                                                    marginTop: '4px',
-                                                    fontWeight: 'normal'
-                                                }}>
+                                                <div className="cal-day-status cal-day-empty">
                                                     Sin turnos
                                                 </div>
                                             )}
