@@ -146,26 +146,30 @@ export default function AdminSettings() {
                     </div>
                 )}
 
-                <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                    Si necesitas cambiar el celular vinculado o si el servicio no responde, podés forzar el cierre de sesión aquí. Luego deberás escanear el código QR nuevamente.
-                </p>
+                {waStatus?.isReady && (
+                    <>
+                        <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                            Si necesitas cambiar el celular vinculado o si el servicio no responde, podés forzar el cierre de sesión aquí. Luego deberás escanear el código QR nuevamente.
+                        </p>
 
-                <button
-                    onClick={handleWhatsAppLogout}
-                    className="btn btn-secondary"
-                    style={{ 
-                        width: '100%', 
-                        borderColor: '#EF4444', 
-                        color: '#EF4444',
-                        justifyContent: 'center',
-                        textTransform: 'uppercase',
-                        fontSize: '0.8rem',
-                        letterSpacing: '1px'
-                    }}
-                    disabled={waLoading}
-                >
-                    {waLoading ? 'Cerrando sesión...' : 'Desvincular WhatsApp Actual'}
-                </button>
+                        <button
+                            onClick={handleWhatsAppLogout}
+                            className="btn btn-secondary"
+                            style={{ 
+                                width: '100%', 
+                                borderColor: '#EF4444', 
+                                color: '#EF4444',
+                                justifyContent: 'center',
+                                textTransform: 'uppercase',
+                                fontSize: '0.8rem',
+                                letterSpacing: '1px'
+                            }}
+                            disabled={waLoading}
+                        >
+                            {waLoading ? 'Cerrando sesión...' : 'Desvincular WhatsApp Actual'}
+                        </button>
+                    </>
+                )}
             </div>
 
             <div className="card" style={{ marginBottom: '2rem' }}>
