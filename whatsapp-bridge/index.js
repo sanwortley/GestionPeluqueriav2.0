@@ -97,6 +97,8 @@ function createClient() {
     });
 
     newClient.on('authenticated', () => {
+        isReady = true;
+        latestQR = null;
         console.log('✅ Autenticación exitosa (Sesión cargada)');
     });
 
