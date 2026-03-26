@@ -203,35 +203,38 @@ app.get('/qr', async (req, res) => {
     if (isReady) {
         return res.send(`
             <div style="text-align:center; font-family:sans-serif; padding:50px;">
-                <h1>✅ Ya estás conectado</h1>
-                <p>No necesitas escanear nada.</p>
-                <form action="/logout" method="POST">
-                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">
-                        Desconectar WhatsApp
-                    </button>
-                </form>
+                <div style="font-size: 5rem; margin-bottom: 20px;">✅</div>
+                <h1>WhatsApp Vinculado Exitosamente</h1>
+                <p style="color: #666; font-size: 1.2rem;">El servicio ya está funcionando en Roma Cabello.</p>
+                <p style="color: #999;">Por seguridad, la desconexión solo se puede realizar desde el Panel de Administración.</p>
+                <div style="margin-top: 30px; padding: 15px; background: #f0f9f1; color: #2e7d32; border-radius: 8px; display: inline-block;">
+                    Status: <strong>Activo y Protegido</strong>
+                </div>
             </div>
         `);
     }
-    if (!latestQR) return res.send('<h1>⏳ Generando QR...</h1><script>setTimeout(()=>location.reload(), 2000)</script>');
+    if (!latestQR) return res.send('<div style="text-align:center; font-family:sans-serif; padding:50px;"><h1>⏳ Generando QR...</h1><p>Espera un momento.</p></div><script>setTimeout(()=>location.reload(), 2000)</script>');
 
     try {
         const qrImage = await QRCode.toDataURL(latestQR);
         res.send(`
             <div style="text-align:center; font-family:sans-serif; padding:50px;">
-                <h1>Escanea este código</h1>
-                <img src="${qrImage}" style="border: 10px solid white; box-shadow: 0 0 20px rgba(0,0,0,0.1);" />
-                <form action="/logout" method="POST" style="margin-top:20px;">
-                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">
-                        Forzar Cierre de Sesión / Limpiar Todo
-                    </button>
-                </form>
+                <h1>Vinculá el WhatsApp del Salón</h1>
+                <p>Escanea este código con el celular que enviará los mensajes.</p>
+                <div style="background: white; padding: 20px; display: inline-block; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                    <img src="${qrImage}" style="display: block;" />
+                </div>
+                <p style="margin-top: 20px; color: #666; font-size: 0.9rem;">
+                    ⚠️ Una vez vinculado, esta página se bloqueará automáticamente por seguridad.
+                </p>
                 <script>
                     setInterval(async () => {
-                        const r = await fetch('/status');
-                        const d = await r.json();
-                        if (d.isReady) window.location.reload();
-                    }, 2000);
+                        try {
+                            const r = await fetch('/status');
+                            const d = await r.json();
+                            if (d.isReady) window.location.reload();
+                        } catch(e) {}
+                    }, 3000);
                 </script>
             </div>
         `);
