@@ -480,9 +480,10 @@ export default function AdminDashboard() {
                                                                     <button
                                                                         onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
                                                                         className="btn btn-outline-danger btn-sm"
-                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.7 }}
+                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.6, border: 'none' }}
+                                                                        title="Eliminar permanentemente"
                                                                     >
-                                                                        Eliminar
+                                                                        <i className="fas fa-trash"></i>
                                                                     </button>
                                                                 </>
                                                             )}
@@ -515,19 +516,21 @@ export default function AdminDashboard() {
                                                                     <button
                                                                         onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
                                                                         className="btn btn-outline-danger btn-sm"
-                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.7 }}
+                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.6, border: 'none' }}
+                                                                        title="Eliminar permanentemente"
                                                                     >
-                                                                        Eliminar permanentemente
+                                                                        <i className="fas fa-trash"></i>
                                                                     </button>
                                                                 </>
                                                             )}
                                                             {(e.resource.status === 'CANCELLED' || e.resource.status === 'FINISHED') && (
                                                                 <button
                                                                     onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
-                                                                    className="btn btn-danger btn-sm"
-                                                                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', width: '100%' }}
+                                                                    className="btn btn-outline-danger btn-sm"
+                                                                    style={{ fontSize: '0.9rem', padding: '0.4rem', width: '100%', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                                                                    title="Eliminar permanentemente"
                                                                 >
-                                                                    Eliminar
+                                                                    <i className="fas fa-trash"></i>
                                                                 </button>
                                                             )}
                                                         </div>

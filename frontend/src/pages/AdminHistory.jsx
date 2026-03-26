@@ -190,18 +190,18 @@ export default function AdminHistory() {
                                                 <button
                                                     onClick={() => deleteAppointment(appt.id)}
                                                     style={{
-                                                        background: 'rgba(239, 68, 68, 0.1)',
-                                                        border: '1px solid #EF4444',
-                                                        borderRadius: '6px',
-                                                        color: '#EF4444',
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: 'rgba(239, 68, 68, 0.6)',
                                                         cursor: 'pointer',
-                                                        padding: '0.3rem 0.5rem',
-                                                        fontSize: '0.7rem',
-                                                        fontWeight: 'bold'
+                                                        padding: '0.5rem',
+                                                        fontSize: '1rem',
+                                                        transition: 'all 0.2s',
                                                     }}
+                                                    className="hover-danger"
                                                     title="Eliminar turno permanentemente"
                                                 >
-                                                    ELIMINAR
+                                                    <i className="fas fa-trash"></i>
                                                 </button>
                                             </td>
                                         </tr>
