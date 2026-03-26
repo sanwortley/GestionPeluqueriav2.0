@@ -26,10 +26,35 @@ let isReady = false;
 
 let client;
 
+// Function to clean up stale Chrome lock files that prevent startup in Railway/Docker
+function cleanupLocks(dir) {
+    if (!fs.existsSync(dir)) return;
+    try {
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+            const fullPath = path.join(dir, file);
+            if (file === 'SingletonLock' || file === 'SingletonCookie') {
+                console.log(`🧹 Eliminando archivo de bloqueo ${file} para permitir el inicio...`);
+                try { fs.unlinkSync(fullPath); } catch(e) {}
+            } else if (fs.lstatSync(fullPath).isDirectory()) {
+                cleanupLocks(fullPath);
+            }
+        }
+    } catch (err) {
+        // Silently fail if we can't access a subfolder
+    }
+}
+
 function createClient() {
+    console.log('🚀 Inicializando nuevo cliente de WhatsApp...');
+    
+    // Clean locks in sessions volume before starting
+    const sessionPath = path.join(__dirname, 'sessions');
+    cleanupLocks(sessionPath);
+
     const newClient = new Client({
         authStrategy: new LocalAuth({
-            dataPath: './sessions'
+            dataPath: sessionPath
         }),
         authTimeoutMs: 0, // No timeout for initial sync
         webVersionCache: {
