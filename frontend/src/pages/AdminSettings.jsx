@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api';
 
 export default function AdminSettings() {
@@ -9,7 +9,37 @@ export default function AdminSettings() {
     });
     const [newEmail, setNewEmail] = useState('');
     const [loading, setLoading] = useState(false);
+    const [waLoading, setWaLoading] = useState(false);
+    const [waStatus, setWaStatus] = useState(null);
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    useEffect(() => {
+        fetchWhatsAppStatus();
+    }, []);
+
+    const fetchWhatsAppStatus = async () => {
+        try {
+            const res = await api.get('whatsapp/status');
+            setWaStatus(res.data);
+        } catch (err) {
+            console.error("Error fetching WA status", err);
+        }
+    };
+
+    const handleWhatsAppLogout = async () => {
+        if (!window.confirm("¿Estás seguro de que querés desvincular el WhatsApp actual? Esto cerrará la sesión y tendrás que escanear un nuevo QR.")) return;
+        
+        try {
+            setWaLoading(true);
+            await api.post('whatsapp/logout');
+            setMessage({ type: 'success', text: '✅ WhatsApp desvinculado con éxito. El puente se está reiniciando, por favor espera un momento y recarga la página de QR para vincular el nuevo número.' });
+            fetchWhatsAppStatus();
+        } catch (err) {
+            setMessage({ type: 'error', text: 'Error al desvincular WhatsApp' });
+        } finally {
+            setWaLoading(false);
+        }
+    };
 
     const handleUpdatePassword = async (e) => {
         e.preventDefault();
@@ -149,6 +179,44 @@ export default function AdminSettings() {
                         {loading ? 'Actualizando...' : 'Cambiar Contraseña'}
                     </button>
                 </form>
+            </div>
+
+            <div className="card" style={{ marginTop: '2rem' }}>
+                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Conectividad WhatsApp</h2>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ 
+                        width: '12px', 
+                        height: '12px', 
+                        borderRadius: '50%', 
+                        backgroundColor: waStatus?.isReady ? '#10B981' : '#EF4444',
+                        boxShadow: `0 0 10px ${waStatus?.isReady ? '#10B981' : '#EF4444'}`
+                    }}></div>
+                    <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 500 }}>
+                        {waStatus?.isReady ? 'WhatsApp Conectado' : 'WhatsApp Desconectado / Esperando QR'}
+                    </span>
+                </div>
+
+                <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                    Si necesitas cambiar el celular vinculado o si el servicio no responde, podés forzar el cierre de sesión aquí. Luego deberás escanear el código QR nuevamente.
+                </p>
+
+                <button
+                    onClick={handleWhatsAppLogout}
+                    className="btn btn-secondary"
+                    style={{ 
+                        width: '100%', 
+                        borderColor: '#EF4444', 
+                        color: '#EF4444',
+                        justifyContent: 'center',
+                        textTransform: 'uppercase',
+                        fontSize: '0.8rem',
+                        letterSpacing: '1px'
+                    }}
+                    disabled={waLoading}
+                >
+                    {waLoading ? 'Cerrando sesión...' : 'Desvincular WhatsApp Actual'}
+                </button>
             </div>
 
             <div className="card" style={{ marginTop: '2rem' }}>
