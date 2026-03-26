@@ -197,6 +197,28 @@ export default function AdminSettings() {
                     </span>
                 </div>
 
+                {!waStatus?.isReady && waStatus?.qrUrl && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <a 
+                            href={waStatus.qrUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn btn-primary"
+                            style={{ 
+                                width: '100%', 
+                                justifyContent: 'center',
+                                textTransform: 'uppercase',
+                                fontSize: '0.8rem',
+                                letterSpacing: '1px',
+                                backgroundColor: '#10B981',
+                                borderColor: '#10B981'
+                            }}
+                        >
+                            🔗 Vincular con QR
+                        </a>
+                    </div>
+                )}
+
                 <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
                     Si necesitas cambiar el celular vinculado o si el servicio no responde, podés forzar el cierre de sesión aquí. Luego deberás escanear el código QR nuevamente.
                 </p>

@@ -17,8 +17,10 @@ async def get_whatsapp_status():
     
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{settings.WHATSAPP_BRIDGE_URL}/status", timeout=5.0)
-            return response.json()
+            res = await client.get(f"{settings.WHATSAPP_BRIDGE_URL}/status", timeout=5.0)
+            data = res.json()
+            data["qrUrl"] = f"{settings.WHATSAPP_BRIDGE_URL}/qr"
+            return data
     except Exception as e:
         logger.error(f"Error checking bridge status: {str(e)}")
         return {"isReady": False, "error": str(e)}
