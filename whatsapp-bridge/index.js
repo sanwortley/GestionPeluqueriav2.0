@@ -220,18 +220,35 @@ app.get('/qr', async (req, res) => {
 // Logout Endpoint
 app.post('/logout', async (req, res) => {
     try {
-        console.log('Cerrando sesión de WhatsApp...');
-        await client.logout();
+        console.log('Cerrando sesión de WhatsApp y limpiando archivos...');
+        try {
+            await client.logout();
+        } catch (e) {
+            console.log('No había sesión activa para cerrar, procediendo con limpieza de archivos.');
+        }
+        
         isReady = false;
         latestQR = null;
+
+        // Limpieza profunda de la carpeta de sesiones
+        const sessionPath = path.join(__dirname, 'sessions');
+        if (fs.existsSync(sessionPath)) {
+            fs.rmSync(sessionPath, { recursive: true, force: true });
+            console.log('✅ Carpeta de sesiones eliminada correctamente.');
+        }
+
         res.send(`
             <div style="text-align:center; font-family:sans-serif; padding:50px;">
-                <h1>Sesión cerrada correctamente</h1>
-                <p>Serás redirigido para escanear un nuevo código en 3 segundos...</p>
-                <script>setTimeout(() => location.href='/qr', 3000);</script>
+                <h1>Sesión y archivos limpiados correctamente</h1>
+                <p>El servidor se reiniciará para generar un nuevo código QR limpio en unos segundos...</p>
+                <script>setTimeout(() => location.href='/qr', 5000);</script>
                 <a href="/qr">Hacerlo ahora</a>
             </div>
         `);
+
+        // Dar un pequeño tiempo y forzar reinicio para recrear el cliente limpio
+        setTimeout(() => process.exit(0), 2000);
+
     } catch (error) {
         console.error('Error al cerrar sesión:', error);
         res.status(500).send('Error al cerrar sesión: ' + error.message);
