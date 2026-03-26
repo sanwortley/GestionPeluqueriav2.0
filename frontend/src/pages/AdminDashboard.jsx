@@ -146,6 +146,18 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleDeleteAppointment = async (id) => {
+        if (!confirm('¿Estás seguro de que deseas ELIMINAR este turno permanentemente? Esta acción no se puede deshacer.')) return;
+        try {
+            await api.delete(`appointments/${id}/`);
+            alert('Turno eliminado correctamente');
+            fetchAllData(); // Refrescar lista y calendario
+        } catch (err) {
+            alert('Error al eliminar el turno: ' + (err.response?.data?.detail || err.response?.data?.message || err.message));
+            console.error(err);
+        }
+    };
+
     const handleUpdateStatus = async (id, status) => {
         try {
             // Since we don't have a direct "update status" endpoint in the original spec separate from logic, 
@@ -480,6 +492,15 @@ export default function AdminDashboard() {
                                                                     </div>
                                                                 </>
                                                             )}
+                                                            {e.resource.status === 'CANCELLED' && (
+                                                                <button
+                                                                    onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
+                                                                    className="btn btn-danger btn-sm"
+                                                                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', width: '100%' }}
+                                                                >
+                                                                    Eliminar
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </td>
@@ -542,9 +563,12 @@ export default function AdminDashboard() {
                                                             <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#FBBF24', color: '#000' }}>Confirmar</button>
                                                         </>
                                                     )}
-                                                    {e.resource.status === 'CONFIRMED' && (
-                                                        <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')} className="btn btn-primary w-full" style={{ backgroundColor: '#10B981' }}>Cerrar Turno</button>
-                                                    )}
+                                                     {e.resource.status === 'CONFIRMED' && (
+                                                         <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')} className="btn btn-primary w-full" style={{ backgroundColor: '#10B981' }}>Cerrar Turno</button>
+                                                     )}
+                                                     {e.resource.status === 'CANCELLED' && (
+                                                         <button onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))} className="btn btn-danger w-full">Eliminar permanentemente</button>
+                                                     )}
                                                 </>
                                             )}
                                         </div>
