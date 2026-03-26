@@ -12,11 +12,12 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
+# Evitar descarga de Chromium y apuntar al que ya trae la imagen
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
+
 # Instalar dependencias
 RUN npm install
-
-# Instalar el navegador Chrome para Puppeteer explícitamente
-RUN npx puppeteer browsers install chrome
 
 # Copiar el resto del código
 COPY . .

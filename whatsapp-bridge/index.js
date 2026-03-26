@@ -19,7 +19,7 @@ app.use(bodyParser.json());
 
 // CONFIGURATION
 const PORT = process.env.PORT || 3001;
-const BACKEND_URL = process.env.BACKEND_WEBSITE_URL || 'http://127.0.0.1:8000'; // API to notify about incoming messages
+const BACKEND_URL = process.env.BACKEND_WEBSITE_URL || 'http://127.0.0.1:8001'; // API to notify about incoming messages
 
 let latestQR = null;
 let isReady = false;
@@ -53,7 +53,7 @@ const client = new Client({
             '--disable-domain-reliability',
             '--disable-sync'
         ],
-        executablePath: process.env.CHROME_PATH || undefined
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined
     }
 });
 
@@ -169,7 +169,17 @@ app.get('/', (req, res) => {
 // View QR Endpoint (Crucial for remote servers like Render)
 app.get('/qr', async (req, res) => {
     if (isReady) {
-        return res.send('<h1>✅ Ya estás conectado</h1><p>No necesitas escanear nada.</p>');
+        return res.send(`
+            <div style="text-align:center; font-family:sans-serif; padding:50px;">
+                <h1>✅ Ya estás conectado</h1>
+                <p>No necesitas escanear nada.</p>
+                <form action="/logout" method="POST">
+                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-size:16px;">
+                        Desconectar WhatsApp
+                    </button>
+                </form>
+            </div>
+        `);
     }
     if (!latestQR) {
         return res.send('<h1>⏳ Generando QR...</h1><p>Vuelve a cargar esta página en unos segundos.</p>');
@@ -187,6 +197,27 @@ app.get('/qr', async (req, res) => {
         `);
     } catch (err) {
         res.status(500).send('Error generando imagen QR');
+    }
+});
+
+// Logout Endpoint
+app.post('/logout', async (req, res) => {
+    try {
+        console.log('Cerrando sesión de WhatsApp...');
+        await client.logout();
+        isReady = false;
+        latestQR = null;
+        res.send(`
+            <div style="text-align:center; font-family:sans-serif; padding:50px;">
+                <h1>Sesión cerrada correctamente</h1>
+                <p>Serás redirigido para escanear un nuevo código en 3 segundos...</p>
+                <script>setTimeout(() => location.href='/qr', 3000);</script>
+                <a href="/qr">Hacerlo ahora</a>
+            </div>
+        `);
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+        res.status(500).send('Error al cerrar sesión: ' + error.message);
     }
 });
 
