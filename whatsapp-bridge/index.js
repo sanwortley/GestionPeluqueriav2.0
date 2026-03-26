@@ -192,6 +192,13 @@ app.post('/send', async (req, res) => {
     });
 });
 
+app.get('/status', (req, res) => {
+    res.json({
+        isReady: isReady,
+        hasQR: !!latestQR
+    });
+});
+
 // Routes
 app.get('/', (req, res) => {
     if (isReady) res.send('<h1>✅ WhatsApp Bridge está ONLINE</h1><p>Conectado y listo.</p>');
