@@ -61,10 +61,15 @@ export default function AdminHistory() {
         try {
             if (!confirm('¿Estás seguro de que deseas ELIMINAR este turno permanentemente del historial? Esta acción no se puede deshacer.')) return;
 
-            await api.delete(`appointments/${id}/`);
-            // Update local state
+            // Optimistic UI update
+            const previousAppts = [...appointments];
             setAppointments(appointments.filter(a => a.id !== id));
+
+            await api.delete(`appointments/${id}/`);
+            // fetchAppointments(); // Optional re-sync, but let's do it to be safe
         } catch (err) {
+            // Rollback
+            setAppointments(previousAppts);
             alert('Error al eliminar el turno');
             console.error(err);
         }

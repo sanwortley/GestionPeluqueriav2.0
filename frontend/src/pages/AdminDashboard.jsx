@@ -148,11 +148,24 @@ export default function AdminDashboard() {
 
     const handleDeleteAppointment = async (id) => {
         if (!confirm('¿Estás seguro de que deseas ELIMINAR este turno permanentemente? Esta acción no se puede deshacer.')) return;
+        
+        // Optimistic UI Update: remove from local state immediately
+        const previousAppts = [...appointments];
+        const previousDayAppts = [...dayAppointments];
+        
+        setAppointments(appointments.filter(a => a.id !== `appt-${id}`));
+        setDayAppointments(dayAppointments.filter(e => e.id !== `appt-${id}`));
+        
         try {
             await api.delete(`appointments/${id}/`);
-            alert('Turno eliminado correctamente');
-            fetchAllData(); // Refrescar lista y calendario
+            // Alert is optional now for speed, but let's keep it discrete or remove it
+            // alert('Turno eliminado correctamente');
+            // We don't need to fetchAllData if we trust the deletion, but let's do it to keep sync
+             fetchAllData(); 
         } catch (err) {
+            // Rollback on error
+            setAppointments(previousAppts);
+            setDayAppointments(previousDayAppts);
             alert('Error al eliminar el turno: ' + (err.response?.data?.detail || err.response?.data?.message || err.message));
             console.error(err);
         }
@@ -447,22 +460,31 @@ export default function AdminDashboard() {
                                                     ) : (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                                             {e.resource.status === 'PENDING' && (
-                                                                <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                                <>
+                                                                    <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                                        <button
+                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
+                                                                            className="btn btn-danger btn-sm"
+                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
+                                                                        >
+                                                                            Rechazar
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')}
+                                                                            className="btn btn-primary btn-sm"
+                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#FBBF24', borderColor: '#FBBF24', color: '#000' }}
+                                                                        >
+                                                                            Confirmar
+                                                                        </button>
+                                                                    </div>
                                                                     <button
-                                                                        onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
-                                                                        className="btn btn-danger btn-sm"
-                                                                        style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
+                                                                        onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
+                                                                        className="btn btn-outline-danger btn-sm"
+                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.7 }}
                                                                     >
-                                                                        Rechazar
+                                                                        Eliminar
                                                                     </button>
-                                                                    <button
-                                                                        onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')}
-                                                                        className="btn btn-primary btn-sm"
-                                                                        style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#FBBF24', borderColor: '#FBBF24', color: '#000' }}
-                                                                    >
-                                                                        Confirmar
-                                                                    </button>
-                                                                </div>
+                                                                </>
                                                             )}
                                                             {e.resource.status === 'CONFIRMED' && (
                                                                 <>
@@ -490,9 +512,16 @@ export default function AdminDashboard() {
                                                                             Cerrar
                                                                         </button>
                                                                     </div>
+                                                                    <button
+                                                                        onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
+                                                                        className="btn btn-outline-danger btn-sm"
+                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.7 }}
+                                                                    >
+                                                                        Eliminar permanentemente
+                                                                    </button>
                                                                 </>
                                                             )}
-                                                            {e.resource.status === 'CANCELLED' && (
+                                                            {(e.resource.status === 'CANCELLED' || e.resource.status === 'FINISHED') && (
                                                                 <button
                                                                     onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
                                                                     className="btn btn-danger btn-sm"
