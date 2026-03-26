@@ -192,6 +192,11 @@ app.get('/qr', async (req, res) => {
                 <h1>Escanea este código con tu WhatsApp</h1>
                 <img src="${qrImage}" style="border: 10px solid white; box-shadow: 0 0 20px rgba(0,0,0,0.1);" />
                 <p>El código se actualiza automáticamente si expira.</p>
+                <form action="/logout" method="POST" style="margin-top:20px;">
+                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-size:16px;">
+                        Forzar Cierre de Sesión / Limpiar Todo
+                    </button>
+                </form>
                 <script>setTimeout(() => location.reload(), 30000);</script>
             </div>
         `);
