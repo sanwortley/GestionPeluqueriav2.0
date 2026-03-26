@@ -67,6 +67,15 @@ function createClient() {
         console.log('También puedes verlo en /qr');
     });
 
+    newClient.on('authenticated', () => {
+        console.log('✅ Autenticación exitosa (Sesión cargada)');
+    });
+
+    newClient.on('auth_failure', (msg) => {
+        console.error('❌ Error de Autenticación:', msg);
+        isReady = false;
+    });
+
     newClient.on('ready', () => {
         isReady = true;
         latestQR = null;
@@ -111,6 +120,11 @@ app.get('/status', (req, res) => {
 app.post('/send', async (req, res) => {
     let { to, body } = req.body;
     if (!to || !body) return res.status(400).json({ error: 'Missing "to" or "body"' });
+
+    if (!isReady) {
+        console.warn(`[SEND] ❌ Intento de envío denegado: El puente aún no está listo.`);
+        return res.status(503).json({ error: 'WhatsApp bridge is not ready. Scan QR first at /qr' });
+    }
 
     try {
         to = to.replace(/\D/g, '');
