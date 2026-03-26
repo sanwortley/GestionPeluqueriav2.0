@@ -30,26 +30,35 @@ async def send_whatsapp_message(to_phone: str, message: str):
             logger.error(f"Failed to send WhatsApp message via bridge: {str(e)}")
             return False
 
+import threading
+
+def _send_whatsapp_thread(url: str, payload: dict):
+    try:
+        with httpx.Client() as client:
+            response = client.post(url, json=payload, timeout=10.0)
+            response.raise_for_status()
+    except Exception as e:
+        logger.error(f"Failed to send WhatsApp (sync) via bridge: {str(e)}")
+
 def send_whatsapp_sync(to_phone: str, message: str):
     """
-    Sync version for local bridge
+    Sync version for local bridge (non-blocking)
     """
-    if not settings.WHATSAPP_BRIDGE_URL:
+    bridge_url = settings.WHATSAPP_BRIDGE_URL
+    if not bridge_url:
+        logger.error("❌ ERROR: WHATSAPP_BRIDGE_URL no está configurada. Mensaje no enviado.")
         return False
 
     clean_phone = to_phone.replace("+", "").replace(" ", "")
-    url = f"{settings.WHATSAPP_BRIDGE_URL}/send"
+    # Asegurar que la URL sea base + /send
+    base_url = bridge_url.rstrip("/")
+    url = f"{base_url}/send"
     
     payload = {
         "to": clean_phone,
         "body": message
     }
 
-    try:
-        with httpx.Client() as client:
-            response = client.post(url, json=payload, timeout=10.0)
-            response.raise_for_status()
-            return True
-    except Exception as e:
-        logger.error(f"Failed to send WhatsApp (sync) via bridge: {str(e)}")
-        return False
+    logger.info(f"📤 Intentando enviar WhatsApp a {clean_phone} via {url}")
+    threading.Thread(target=_send_whatsapp_thread, args=(url, payload)).start()
+    return True
