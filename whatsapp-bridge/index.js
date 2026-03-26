@@ -195,14 +195,16 @@ app.post('/send', async (req, res) => {
 });
 
 app.get('/status', (req, res) => {
+    const sInfo = isReady && client?.info ? {
+        pushname: client.info.pushname || 'Usuario',
+        wid: client.info.wid?.user || 'N/A',
+        platform: client.info.platform || 'WhatsApp'
+    } : null;
+
     res.json({
         isReady: isReady,
         hasQR: !!latestQR,
-        sessionInfo: isReady ? {
-            pushname: client.info.pushname,
-            wid: client.info.wid.user,
-            platform: client.info.platform
-        } : null
+        sessionInfo: sInfo
     });
 });
 
