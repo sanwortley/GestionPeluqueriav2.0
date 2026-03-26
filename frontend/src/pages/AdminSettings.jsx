@@ -146,6 +146,17 @@ export default function AdminSettings() {
                     </div>
                 )}
 
+                {!waStatus?.isReady && (
+                    <p style={{ fontSize: '0.8rem', color: '#9CA3AF', textAlign: 'center', marginBottom: '1.5rem' }}>
+                        ¿Problemas vinculando? <button 
+                            onClick={handleWhatsAppLogout} 
+                            style={{ background: 'none', border: 'none', color: '#3B82F6', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                        >
+                            Hacé clic acá para reiniciar el proceso de cero.
+                        </button>
+                    </p>
+                )}
+
                 {waStatus?.isReady && (
                     <>
                         <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
