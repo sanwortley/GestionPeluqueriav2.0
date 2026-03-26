@@ -233,7 +233,15 @@ app.post('/logout', async (req, res) => {
 
         const sessionPath = path.join(__dirname, 'sessions');
         if (fs.existsSync(sessionPath)) {
-            fs.rmSync(sessionPath, { recursive: true, force: true });
+            try {
+                const files = fs.readdirSync(sessionPath);
+                for (const file of files) {
+                    fs.rmSync(path.join(sessionPath, file), { recursive: true, force: true });
+                }
+                console.log('✅ Carpeta de sesiones vaciada (manteniendo mount point)');
+            } catch (err) {
+                console.error('❌ Error parcial vaciando sesiones:', err.message);
+            }
         }
 
         // Recreate the client in the same process
