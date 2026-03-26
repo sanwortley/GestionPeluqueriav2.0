@@ -97,20 +97,21 @@ function createClient() {
     });
 
     newClient.on('authenticated', () => {
-        isReady = true;
+        // Authenticated means the session is loaded, but not yet fully synchronized
         latestQR = null;
-        console.log('✅ Autenticación exitosa (Sesión cargada)');
+        logToFile('📡 Autenticación exitosa (Sesión cargada)');
     });
 
     newClient.on('auth_failure', (msg) => {
-        console.error('❌ Error de Autenticación:', msg);
+        logToFile(`❌ Error de Autenticación: ${msg}`);
         isReady = false;
     });
 
     newClient.on('ready', () => {
         isReady = true;
         latestQR = null;
-        console.log('✅ WhatsApp Bridge está listo y conectado!');
+        logToFile('✅ WhatsApp Bridge está listo y conectado!');
+        logToFile(`📱 Info Sesión: ${JSON.stringify(newClient.info)}`);
     });
 
     newClient.on('message_create', async (msg) => {
