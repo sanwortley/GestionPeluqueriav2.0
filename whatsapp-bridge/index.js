@@ -253,14 +253,9 @@ app.get('/qr', async (req, res) => {
 app.post('/logout', async (req, res) => {
     try {
         console.log('--- REINICIO SOFT SOLICITADO ---');
-        res.send(`
-            <div style="text-align:center; font-family:sans-serif; padding:50px;">
-                <h1>🧼 Limpiando y Reiniciando...</h1>
-                <p>Estamos borrando los archivos temporales para que puedas escanear de nuevo.</p>
-                <p>No cierres esta pestaña, te avisaremos cuando esté listo.</p>
-                <script>setTimeout(() => location.href='/qr', 5000);</script>
-            </div>
-        `);
+        
+        // Return JSON success immediately so the backend can finish
+        res.json({ success: true, message: 'Reinicio iniciado' });
 
         // Execute background cleanup
         try { await client.destroy(); } catch(e) {}
