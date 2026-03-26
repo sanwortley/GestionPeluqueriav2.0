@@ -120,13 +120,16 @@ app.post('/send', async (req, res) => {
         else if (to.length === 12 && to.startsWith('15')) to = '549' + to.substring(2);
         else if (to.startsWith('54') && to.length === 12 && to[2] !== '9') to = '549' + to.substring(2);
         else if (to.startsWith('5490')) to = '549' + to.substring(4);
+        console.log(`[SEND] Solicitud recibida para: ${to}`);
+        const chatId = `${to}@c.us`;
 
-        const numberId = await client.getNumberId(to);
-        if (!numberId) return res.status(400).json({ error: 'Number not registered' });
-
-        const response = await client.sendMessage(numberId._serialized, body);
+        console.log(`[SEND] Intentando enviar a ${chatId}...`);
+        const response = await client.sendMessage(chatId, body);
+        
+        console.log(`[SEND] ✅ Mensaje enviado correctamente a ${chatId}`);
         res.json({ success: true, messageId: response.id?.id });
     } catch (error) {
+        console.error(`[SEND] ❌ Error enviando mensaje a ${to}:`, error);
         res.status(500).json({ error: error.message });
     }
 });
