@@ -197,7 +197,12 @@ app.post('/send', async (req, res) => {
 app.get('/status', (req, res) => {
     res.json({
         isReady: isReady,
-        hasQR: !!latestQR
+        hasQR: !!latestQR,
+        sessionInfo: isReady ? {
+            pushname: client.info.pushname,
+            wid: client.info.wid.user,
+            platform: client.info.platform
+        } : null
     });
 });
 

@@ -126,6 +126,20 @@ export default function AdminSettings() {
                     </span>
                 </div>
 
+                {waStatus?.isReady && waStatus?.sessionInfo && (
+                    <div style={{ 
+                        marginBottom: '1.5rem', 
+                        padding: '10px', 
+                        backgroundColor: 'rgba(255,255,255,0.05)', 
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        color: '#9CA3AF'
+                    }}>
+                        <div style={{ marginBottom: '4px' }}>📱 <strong>Sesión:</strong> {waStatus.sessionInfo.pushname} ({waStatus.sessionInfo.wid})</div>
+                        <div>💻 <strong>Plataforma:</strong> {waStatus.sessionInfo.platform}</div>
+                    </div>
+                )}
+
                 {!waStatus?.isReady && waStatus?.qrUrl && (
                     <div style={{ marginBottom: '1.5rem' }}>
                         <a 
