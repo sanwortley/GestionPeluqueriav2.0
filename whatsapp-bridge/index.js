@@ -57,6 +57,10 @@ const client = new Client({
     }
 });
 
+app.get('/status', (req, res) => {
+    res.json({ isReady });
+});
+
 // QR Code Generation
 client.on('qr', (qr) => {
     latestQR = qr;
@@ -197,7 +201,15 @@ app.get('/qr', async (req, res) => {
                         Forzar Cierre de Sesión / Limpiar Todo
                     </button>
                 </form>
-                <script>setTimeout(() => location.reload(), 30000);</script>
+                <script>
+                    setInterval(async () => {
+                        try {
+                            const resp = await fetch('/status');
+                            const data = await resp.json();
+                            if (data.isReady) window.location.reload();
+                        } catch (e) {}
+                    }, 2000);
+                </script>
             </div>
         `);
     } catch (err) {
