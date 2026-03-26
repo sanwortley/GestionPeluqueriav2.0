@@ -15,6 +15,8 @@ export default function AdminSettings() {
 
     useEffect(() => {
         fetchWhatsAppStatus();
+        const interval = setInterval(fetchWhatsAppStatus, 10000); // Polling cada 10s
+        return () => clearInterval(interval);
     }, []);
 
     const fetchWhatsAppStatus = async () => {
