@@ -94,94 +94,21 @@ export default function AdminSettings() {
         <div className="animate-fade-in" style={{ maxWidth: '500px', margin: '0 auto' }}>
             <h1 className="title">Configuración</h1>
 
+            {message.text && (
+                <div style={{
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    marginBottom: '2rem',
+                    backgroundColor: message.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: message.type === 'success' ? '#10B981' : '#EF4444',
+                    border: `1px solid ${message.type === 'success' ? '#10B981' : '#EF4444'}`,
+                    fontSize: '0.9rem'
+                }}>
+                    {message.text}
+                </div>
+            )}
+
             <div className="card" style={{ marginBottom: '2rem' }}>
-                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Cambiar Email de Acceso</h2>
-                <form onSubmit={handleUpdateEmail}>
-                    <div className="form-group">
-                        <label className="label">Nuevo Email</label>
-                        <input
-                            type="email"
-                            className="input"
-                            required
-                            placeholder="ejemplo@correo.com"
-                            value={newEmail}
-                            onChange={e => setNewEmail(e.target.value)}
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: '1rem', backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
-                        disabled={loading}
-                    >
-                        {loading ? 'Actualizando...' : 'Actualizar Email'}
-                    </button>
-                </form>
-            </div>
-
-            <div className="card">
-                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Cambiar Contraseña</h2>
-
-                <form onSubmit={handleUpdatePassword}>
-                    {message.text && (
-                        <div style={{
-                            padding: '1rem',
-                            borderRadius: '8px',
-                            marginBottom: '1rem',
-                            backgroundColor: message.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            color: message.type === 'success' ? '#10B981' : '#EF4444',
-                            border: `1px solid ${message.type === 'success' ? '#10B981' : '#EF4444'}`,
-                            fontSize: '0.9rem'
-                        }}>
-                            {message.text}
-                        </div>
-                    )}
-
-                    <div className="form-group">
-                        <label className="label">Contraseña Actual</label>
-                        <input
-                            type="password"
-                            className="input"
-                            required
-                            value={passwords.current_password}
-                            onChange={e => setPasswords({ ...passwords, current_password: e.target.value })}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="label">Nueva Contraseña</label>
-                        <input
-                            type="password"
-                            className="input"
-                            required
-                            value={passwords.new_password}
-                            onChange={e => setPasswords({ ...passwords, new_password: e.target.value })}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="label">Confirmar Nueva Contraseña</label>
-                        <input
-                            type="password"
-                            className="input"
-                            required
-                            value={passwords.confirm_password}
-                            onChange={e => setPasswords({ ...passwords, confirm_password: e.target.value })}
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: '1rem' }}
-                        disabled={loading}
-                    >
-                        {loading ? 'Actualizando...' : 'Cambiar Contraseña'}
-                    </button>
-                </form>
-            </div>
-
-            <div className="card" style={{ marginTop: '2rem' }}>
                 <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Conectividad WhatsApp</h2>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -239,6 +166,79 @@ export default function AdminSettings() {
                 >
                     {waLoading ? 'Cerrando sesión...' : 'Desvincular WhatsApp Actual'}
                 </button>
+            </div>
+
+            <div className="card" style={{ marginBottom: '2rem' }}>
+                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Cambiar Email de Acceso</h2>
+                <form onSubmit={handleUpdateEmail}>
+                    <div className="form-group">
+                        <label className="label">Nuevo Email</label>
+                        <input
+                            type="email"
+                            className="input"
+                            required
+                            placeholder="ejemplo@correo.com"
+                            value={newEmail}
+                            onChange={e => setNewEmail(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginTop: '1rem', backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
+                        disabled={loading}
+                    >
+                        {loading ? 'Actualizando...' : 'Actualizar Email'}
+                    </button>
+                </form>
+            </div>
+
+            <div className="card">
+                <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Cambiar Contraseña</h2>
+
+                <form onSubmit={handleUpdatePassword}>
+                    <div className="form-group">
+                        <label className="label">Contraseña Actual</label>
+                        <input
+                            type="password"
+                            className="input"
+                            required
+                            value={passwords.current_password}
+                            onChange={e => setPasswords({ ...passwords, current_password: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Nueva Contraseña</label>
+                        <input
+                            type="password"
+                            className="input"
+                            required
+                            value={passwords.new_password}
+                            onChange={e => setPasswords({ ...passwords, new_password: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Confirmar Nueva Contraseña</label>
+                        <input
+                            type="password"
+                            className="input"
+                            required
+                            value={passwords.confirm_password}
+                            onChange={e => setPasswords({ ...passwords, confirm_password: e.target.value })}
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginTop: '1rem' }}
+                        disabled={loading}
+                    >
+                        {loading ? 'Actualizando...' : 'Cambiar Contraseña'}
+                    </button>
+                </form>
             </div>
 
             <div className="card" style={{ marginTop: '2rem' }}>
