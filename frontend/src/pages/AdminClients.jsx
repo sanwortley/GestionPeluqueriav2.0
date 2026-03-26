@@ -58,7 +58,8 @@ export default function AdminClients() {
     if (loading) return <div className="p-4 text-white">Cargando clientes...</div>;
 
     return (
-        <div className="container animate-fade-in">
+        <>
+            <div className="container animate-fade-in">
             <h1 className="title" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Cartera de Clientes</h1>
 
             <div className="card" style={{ padding: '0' }}>
@@ -113,7 +114,7 @@ export default function AdminClients() {
                     </table>
                 </div>
             </div>
-
+            </div>
             {editingClient && (
                 <div className="modal-overlay">
                     <div className="modal-content animate-slide-up" style={{ maxWidth: '320px' }}>
@@ -160,6 +161,6 @@ export default function AdminClients() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 }
