@@ -24,153 +24,120 @@ const BACKEND_URL = process.env.BACKEND_WEBSITE_URL || 'http://127.0.0.1:8001'; 
 let latestQR = null;
 let isReady = false;
 
-const client = new Client({
-    authStrategy: new LocalAuth({
-        dataPath: './sessions'
-    }),
-    puppeteer: {
-        headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-extensions',
-            '--disable-component-extensions-with-background-pages',
-            '--disable-default-apps',
-            '--mute-audio',
-            '--no-default-browser-check',
-            '--autoplay-policy=user-gesture-required',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-notifications',
-            '--disable-background-networking',
-            '--disable-breakpad',
-            '--disable-component-update',
-            '--disable-domain-reliability',
-            '--disable-sync'
-        ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined
-    }
-});
+let client;
+
+function createClient() {
+    const newClient = new Client({
+        authStrategy: new LocalAuth({
+            dataPath: './sessions'
+        }),
+        puppeteer: {
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu',
+                '--disable-extensions',
+                '--disable-component-extensions-with-background-pages',
+                '--disable-default-apps',
+                '--mute-audio',
+                '--no-default-browser-check',
+                '--autoplay-policy=user-gesture-required',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-notifications',
+                '--disable-background-networking',
+                '--disable-breakpad',
+                '--disable-component-update',
+                '--disable-domain-reliability',
+                '--disable-sync'
+            ],
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined
+        }
+    });
+
+    // QR Code Generation
+    newClient.on('qr', (qr) => {
+        latestQR = qr;
+        isReady = false;
+        console.log('--- NUEVO QR GENERADO ---');
+        qrcodeTerminal.generate(qr, { small: true });
+        console.log('También puedes verlo en /qr');
+    });
+
+    newClient.on('ready', () => {
+        isReady = true;
+        latestQR = null;
+        console.log('✅ WhatsApp Bridge está listo y conectado!');
+    });
+
+    newClient.on('message_create', async (msg) => {
+        const from = msg.from;
+        const body = msg.body || "";
+        logToFile(`[DETECCION] De: ${from} | Body: "${body}" | FromMe: ${msg.fromMe}`);
+
+        if (msg.from === 'status@broadcast') return;
+
+        if (body.trim() === '1' || body.trim() === '2') {
+            logToFile(`🎯 COINCIDENCIA CON EL "1" o "2"`);
+            try {
+                const res = await axios.post(`${BACKEND_URL}/api/webhooks/ultramsg`, {
+                    data: {
+                        body: body.trim(),
+                        from: msg.from
+                    }
+                });
+                logToFile(`✅ Backend webhook response: ${JSON.stringify(res.data)}`);
+            } catch (error) {
+                logToFile(`❌ Error avisando al backend: ${error.message}`);
+            }
+        }
+    });
+
+    newClient.initialize();
+    return newClient;
+}
+
+// Global client instance
+client = createClient();
 
 app.get('/status', (req, res) => {
     res.json({ isReady });
 });
 
-// QR Code Generation
-client.on('qr', (qr) => {
-    latestQR = qr;
-    isReady = false;
-    console.log('--- NUEVO QR GENERADO ---');
-    qrcodeTerminal.generate(qr, { small: true });
-    console.log('También puedes verlo en: http://localhost:' + PORT + '/qr');
-});
-
-client.on('ready', () => {
-    isReady = true;
-    latestQR = null;
-    console.log('✅ WhatsApp Bridge está listo y conectado!');
-});
-
-client.on('message_create', async (msg) => {
-    // CAPTURAR TODO PARA DEBUG
-    const from = msg.from;
-    const body = msg.body || "";
-    logToFile(`[DETECCION] De: ${from} | Body: "${body}" | FromMe: ${msg.fromMe}`);
-
-    if (msg.from === 'status@broadcast') return;
-
-    if (body.trim() === '1' || body.trim() === '2') {
-        logToFile(`🎯 COINCIDENCIA CON EL "1" o "2"`);
-        try {
-            const res = await axios.post(`${BACKEND_URL}/api/webhooks/ultramsg`, {
-                data: {
-                    body: body.trim(),
-                    from: msg.from
-                }
-            });
-            logToFile(`✅ Backend webhook response: ${JSON.stringify(res.data)}`);
-        } catch (error) {
-            logToFile(`❌ Error avisando al backend: ${error.message}`);
-        }
-    }
-});
-
 // API Endpoint to send messages from Python
 app.post('/send', async (req, res) => {
     let { to, body } = req.body;
-
-    if (!to || !body) {
-        return res.status(400).json({ error: 'Missing "to" or "body"' });
-    }
+    if (!to || !body) return res.status(400).json({ error: 'Missing "to" or "body"' });
 
     try {
-        // Cleaning all non-numeric characters
         to = to.replace(/\D/g, '');
-
-        // ARGENTINA NORMALIZATION (54)
-        // If the number is local (10 digits, e.g. 3517552167), add 549
-        if (to.length === 10) {
-            to = '549' + to;
-        }
-        // If it has '15' (common in Argentina) e.g. 153517552167 (12 digits)
-        else if (to.length === 12 && to.startsWith('15')) {
-            to = '549' + to.substring(2);
-        }
-        // If it starts with 54 but is missing the 9 (54351... 12 digits)
-        else if (to.startsWith('54') && to.length === 12 && to[2] !== '9') {
-            to = '549' + to.substring(2);
-        }
-        // If it starts with 549 but the next digit is 0 (wrong format 5490351...)
-        else if (to.startsWith('5490')) {
-            to = '549' + to.substring(4);
-        }
-
-        console.log(`Normalizado para WhatsApp: ${to}`);
-
-        const chatId = `${to}@c.us`;
+        if (to.length === 10) to = '549' + to;
+        else if (to.length === 12 && to.startsWith('15')) to = '549' + to.substring(2);
+        else if (to.startsWith('54') && to.length === 12 && to[2] !== '9') to = '549' + to.substring(2);
+        else if (to.startsWith('5490')) to = '549' + to.substring(4);
 
         const numberId = await client.getNumberId(to);
-
-        if (!numberId) {
-            console.error(`El número ${to} no está registrado en WhatsApp.`);
-            return res.status(400).json({ error: 'Number not registered' });
-        }
-
-        console.log(`Enviando a ID oficial: ${numberId._serialized}`);
-        console.log(`Contenido: "${body.substring(0, 30)}..."`);
+        if (!numberId) return res.status(400).json({ error: 'Number not registered' });
 
         const response = await client.sendMessage(numberId._serialized, body);
-
-        if (response.id && response.id.fromMe) {
-            console.log(`✅ Mensaje entregado a la cola de salida de WhatsApp (ID: ${response.id.id})`);
-            res.json({ success: true, messageId: response.id.id });
-        } else {
-            console.log(`⚠️ WhatsApp no devolvió confirmación de envío, pero no dio error.`);
-            res.json({ success: true });
-        }
+        res.json({ success: true, messageId: response.id?.id });
     } catch (error) {
-        console.error('Error detallado mandando mensaje:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Status Endpoint
+// Routes
 app.get('/', (req, res) => {
-    if (isReady) {
-        res.send('<h1>✅ WhatsApp Bridge está ONLINE</h1><p>Conectado y listo para procesar mensajes.</p>');
-    } else if (latestQR) {
-        res.send('<h1>⚠️ Esperando conexión</h1><p>Por favor escanea el código QR en <a href="/qr">/qr</a></p>');
-    } else {
-        res.send('<h1>⏳ Iniciando...</h1><p>El sistema se está levantando, espera unos segundos.</p>');
-    }
+    if (isReady) res.send('<h1>✅ WhatsApp Bridge está ONLINE</h1><p>Conectado y listo.</p>');
+    else if (latestQR) res.send('<h1>⚠️ Esperando conexión</h1><p>Escanea el QR en <a href="/qr">/qr</a></p>');
+    else res.send('<h1>⏳ Iniciando...</h1><p>El sistema se está levantando.</p>');
 });
 
-// View QR Endpoint (Crucial for remote servers like Render)
 app.get('/qr', async (req, res) => {
     if (isReady) {
         return res.send(`
@@ -178,85 +145,69 @@ app.get('/qr', async (req, res) => {
                 <h1>✅ Ya estás conectado</h1>
                 <p>No necesitas escanear nada.</p>
                 <form action="/logout" method="POST">
-                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-size:16px;">
+                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">
                         Desconectar WhatsApp
                     </button>
                 </form>
             </div>
         `);
     }
-    if (!latestQR) {
-        return res.send('<h1>⏳ Generando QR...</h1><p>Vuelve a cargar esta página en unos segundos.</p>');
-    }
+    if (!latestQR) return res.send('<h1>⏳ Generando QR...</h1><script>setTimeout(()=>location.reload(), 2000)</script>');
 
     try {
         const qrImage = await QRCode.toDataURL(latestQR);
         res.send(`
             <div style="text-align:center; font-family:sans-serif; padding:50px;">
-                <h1>Escanea este código con tu WhatsApp</h1>
+                <h1>Escanea este código</h1>
                 <img src="${qrImage}" style="border: 10px solid white; box-shadow: 0 0 20px rgba(0,0,0,0.1);" />
-                <p>El código se actualiza automáticamente si expira.</p>
                 <form action="/logout" method="POST" style="margin-top:20px;">
-                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-size:16px;">
+                    <button type="submit" style="background:#ff4757; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">
                         Forzar Cierre de Sesión / Limpiar Todo
                     </button>
                 </form>
                 <script>
                     setInterval(async () => {
-                        try {
-                            const resp = await fetch('/status');
-                            const data = await resp.json();
-                            if (data.isReady) window.location.reload();
-                        } catch (e) {}
+                        const r = await fetch('/status');
+                        const d = await r.json();
+                        if (d.isReady) window.location.reload();
                     }, 2000);
                 </script>
             </div>
         `);
-    } catch (err) {
-        res.status(500).send('Error generando imagen QR');
-    }
+    } catch (err) { res.status(500).send('Error'); }
 });
 
-// Logout Endpoint
 app.post('/logout', async (req, res) => {
     try {
-        console.log('Cerrando sesión de WhatsApp y limpiando archivos...');
-        try {
-            await client.logout();
-        } catch (e) {
-            console.log('No había sesión activa para cerrar, procediendo con limpieza de archivos.');
-        }
+        console.log('--- REINICIO SOFT SOLICITADO ---');
+        res.send(`
+            <div style="text-align:center; font-family:sans-serif; padding:50px;">
+                <h1>🧼 Limpiando y Reiniciando...</h1>
+                <p>Estamos borrando los archivos temporales para que puedas escanear de nuevo.</p>
+                <p>No cierres esta pestaña, te avisaremos cuando esté listo.</p>
+                <script>setTimeout(() => location.href='/qr', 5000);</script>
+            </div>
+        `);
+
+        // Execute background cleanup
+        try { await client.destroy(); } catch(e) {}
         
         isReady = false;
         latestQR = null;
 
-        // Limpieza profunda de la carpeta de sesiones
         const sessionPath = path.join(__dirname, 'sessions');
         if (fs.existsSync(sessionPath)) {
             fs.rmSync(sessionPath, { recursive: true, force: true });
-            console.log('✅ Carpeta de sesiones eliminada correctamente.');
         }
 
-        res.send(`
-            <div style="text-align:center; font-family:sans-serif; padding:50px;">
-                <h1>Sesión y archivos limpiados correctamente</h1>
-                <p>El servidor se reiniciará para generar un nuevo código QR limpio en unos segundos...</p>
-                <script>setTimeout(() => location.href='/qr', 5000);</script>
-                <a href="/qr">Hacerlo ahora</a>
-            </div>
-        `);
-
-        // Dar un pequeño tiempo y forzar reinicio para recrear el cliente limpio
-        setTimeout(() => process.exit(0), 2000);
+        // Recreate the client in the same process
+        client = createClient();
 
     } catch (error) {
         console.error('Error al cerrar sesión:', error);
-        res.status(500).send('Error al cerrar sesión: ' + error.message);
     }
 });
 
-client.initialize();
-
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Puerto de control del Bridge abierto en: http://0.0.0.0:${PORT}`);
+    console.log(`🚀 Bridge OK en puerto ${PORT}`);
 });
