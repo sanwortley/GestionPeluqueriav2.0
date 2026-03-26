@@ -120,6 +120,8 @@ app.get('/status', (req, res) => {
     res.json({ isReady });
 });
 
+let sendQueue = Promise.resolve();
+
 // API Endpoint to send messages from Python
 app.post('/send', async (req, res) => {
     let { to, body } = req.body;
@@ -130,31 +132,39 @@ app.post('/send', async (req, res) => {
         return res.status(503).json({ error: 'WhatsApp bridge is not ready. Scan QR first at /qr' });
     }
 
-    try {
-        to = to.replace(/\D/g, '');
-        if (to.length === 10) to = '549' + to;
-        else if (to.length === 12 && to.startsWith('15')) to = '549' + to.substring(2);
-        else if (to.startsWith('54') && to.length === 12 && to[2] !== '9') to = '549' + to.substring(2);
-        else if (to.startsWith('5490')) to = '549' + to.substring(4);
-        console.log(`[SEND] Solicitud recibida para: ${to}`);
-        const chatId = `${to}@c.us`;
+    // Use a queue to serialize all sendMessage calls
+    sendQueue = sendQueue.then(async () => {
+        try {
+            to = to.replace(/\D/g, '');
+            if (to.length === 10) to = '549' + to;
+            else if (to.length === 12 && to.startsWith('15')) to = '549' + to.substring(2);
+            else if (to.startsWith('54') && to.length === 12 && to[2] !== '9') to = '549' + to.substring(2);
+            else if (to.startsWith('5490')) to = '549' + to.substring(4);
+            
+            console.log(`[SEND] Procesando mensaje para: ${to}`);
+            const chatId = `${to}@c.us`;
 
-        console.log(`[SEND] Intentando enviar a ${chatId}...`);
-        
-        // Safety timeout for the send operation
-        const sendPromise = client.sendMessage(chatId, body);
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('TIMEOUT_INTERNO_WHATSAPP')), 25000)
-        );
+            // Safety timeout for the send operation
+            const sendPromise = client.sendMessage(chatId, body);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('TIMEOUT_INTERNO_WHATSAPP')), 45000)
+            );
 
-        const response = await Promise.race([sendPromise, timeoutPromise]);
-        
-        console.log(`[SEND] ✅ Mensaje enviado correctamente a ${chatId}`);
-        res.json({ success: true, messageId: response.id?.id });
-    } catch (error) {
-        console.error(`[SEND] ❌ Error enviando mensaje a ${to}:`, error.message);
-        res.status(500).json({ error: error.message });
-    }
+            const response = await Promise.race([sendPromise, timeoutPromise]);
+            
+            console.log(`[SEND] ✅ Mensaje enviado correctamente a ${chatId}`);
+            res.json({ success: true, messageId: response.id?.id });
+        } catch (error) {
+            console.error(`[SEND] ❌ Error enviando mensaje a ${to}:`, error.message);
+            // If the error was a real send error (not a timeout queue issue), 
+            // we should still resolve the queue so next messages can proceed
+            if (!res.headersSent) {
+                res.status(500).json({ error: error.message });
+            }
+        }
+    }).catch(err => {
+        console.error('CRITICAL: Queue error:', err);
+    });
 });
 
 // Routes
