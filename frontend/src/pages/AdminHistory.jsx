@@ -187,22 +187,20 @@ export default function AdminHistory() {
                                             </td>
                                             <td className="text-muted" style={{ fontSize: '0.85rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{appt.note || '-'}</td>
                                             <td style={{ textAlign: 'center' }}>
-                                                <button
+                                                <i
                                                     onClick={() => deleteAppointment(appt.id)}
+                                                    className="fas fa-trash"
                                                     style={{
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        color: 'rgba(239, 68, 68, 0.6)',
+                                                        color: 'rgba(239, 68, 68, 0.4)',
                                                         cursor: 'pointer',
                                                         padding: '0.5rem',
-                                                        fontSize: '1rem',
+                                                        fontSize: '0.9rem',
                                                         transition: 'all 0.2s',
                                                     }}
-                                                    className="hover-danger"
                                                     title="Eliminar turno permanentemente"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
+                                                    onMouseOver={e => e.target.style.color = 'var(--danger)'}
+                                                    onMouseOut={e => e.target.style.color = 'rgba(239, 68, 68, 0.4)'}
+                                                ></i>
                                             </td>
                                         </tr>
                                     );

@@ -477,14 +477,16 @@ export default function AdminDashboard() {
                                                                             Confirmar
                                                                         </button>
                                                                     </div>
-                                                                    <button
-                                                                        onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
-                                                                        className="btn btn-outline-danger btn-sm"
-                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.6, border: 'none' }}
-                                                                        title="Eliminar permanentemente"
-                                                                    >
-                                                                        <i className="fas fa-trash"></i>
-                                                                    </button>
+                                                                    <div style={{ textAlign: 'right', marginTop: '-0.5rem' }}>
+                                                                        <i
+                                                                            onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
+                                                                            className="fas fa-trash"
+                                                                            style={{ fontSize: '0.8rem', color: 'rgba(239, 68, 68, 0.4)', cursor: 'pointer', padding: '0.4rem' }}
+                                                                            title="Eliminar permanentemente"
+                                                                            onMouseOver={e => e.target.style.color = 'var(--danger)'}
+                                                                            onMouseOut={e => e.target.style.color = 'rgba(239, 68, 68, 0.4)'}
+                                                                        ></i>
+                                                                    </div>
                                                                 </>
                                                             )}
                                                             {e.resource.status === 'CONFIRMED' && (
@@ -513,25 +515,29 @@ export default function AdminDashboard() {
                                                                             Cerrar
                                                                         </button>
                                                                     </div>
-                                                                    <button
-                                                                        onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
-                                                                        className="btn btn-outline-danger btn-sm"
-                                                                        style={{ fontSize: '0.65rem', padding: '0.2rem', opacity: 0.6, border: 'none' }}
-                                                                        title="Eliminar permanentemente"
-                                                                    >
-                                                                        <i className="fas fa-trash"></i>
-                                                                    </button>
+                                                                    <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
+                                                                        <i
+                                                                            onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
+                                                                            className="fas fa-trash"
+                                                                            style={{ fontSize: '0.8rem', color: 'rgba(239, 68, 68, 0.4)', cursor: 'pointer', padding: '0.4rem' }}
+                                                                            title="Eliminar permanentemente"
+                                                                            onMouseOver={e => e.target.style.color = 'var(--danger)'}
+                                                                            onMouseOut={e => e.target.style.color = 'rgba(239, 68, 68, 0.4)'}
+                                                                        ></i>
+                                                                    </div>
                                                                 </>
                                                             )}
                                                             {(e.resource.status === 'CANCELLED' || e.resource.status === 'FINISHED') && (
-                                                                <button
-                                                                    onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
-                                                                    className="btn btn-outline-danger btn-sm"
-                                                                    style={{ fontSize: '0.9rem', padding: '0.4rem', width: '100%', border: '1px solid rgba(239, 68, 68, 0.3)' }}
-                                                                    title="Eliminar permanentemente"
-                                                                >
-                                                                    <i className="fas fa-trash"></i>
-                                                                </button>
+                                                                <div style={{ textAlign: 'center' }}>
+                                                                    <i
+                                                                        onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
+                                                                        className="fas fa-trash"
+                                                                        style={{ fontSize: '1rem', color: 'rgba(239, 68, 68, 0.5)', cursor: 'pointer', padding: '0.5rem' }}
+                                                                        title="Eliminar permanentemente"
+                                                                        onMouseOver={e => e.target.style.color = 'var(--danger)'}
+                                                                        onMouseOut={e => e.target.style.color = 'rgba(239, 68, 68, 0.5)'}
+                                                                    ></i>
+                                                                </div>
                                                             )}
                                                         </div>
                                                     )}
