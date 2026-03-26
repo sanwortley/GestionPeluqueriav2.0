@@ -62,9 +62,13 @@ function createClient() {
     newClient.on('qr', (qr) => {
         latestQR = qr;
         isReady = false;
-        console.log('--- NUEVO QR GENERADO ---');
+        logToFile('--- NUEVO QR GENERADO ---');
         qrcodeTerminal.generate(qr, { small: true });
         console.log('También puedes verlo en /qr');
+    });
+
+    newClient.on('loading_screen', (percent, message) => {
+        logToFile(`[CARGA] ${percent}% - ${message}`);
     });
 
     newClient.on('authenticated', () => {
