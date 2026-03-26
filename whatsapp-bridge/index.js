@@ -45,8 +45,14 @@ function createClient() {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process', // Known to help in limited resource environments
-                '--disable-gpu'
+                '--disable-gpu',
+                '--hide-scrollbars',
+                '--disable-notifications',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--disable-extensions',
+                '--disable-sync',
+                '--metrics-recording-only'
             ],
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined
         }
