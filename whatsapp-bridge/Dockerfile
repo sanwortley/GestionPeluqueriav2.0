@@ -1,10 +1,15 @@
-FROM ghcr.io/puppeteer/puppeteer:latest
+FROM node:20-slim
 
-USER root
-
-# Instalar dependencias necesarias para whatsapp-web.js
+# Instalar dependencias necesarias para Chrome
 RUN apt-get update && apt-get install -y \
-    ffmpeg \
+    wget \
+    gnupg \
+    ca-certificates \
+    procps \
+    libxss1 \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -12,20 +17,17 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Evitar descarga de Chromium y apuntar al que ya trae la imagen
+# Evitar descarga de Chromium y apuntar al Chrome instalado
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Instalar dependencias
 RUN npm install
 
 # Copiar el resto del código
 COPY . .
 
-# Asegurar permisos para la carpeta de sesiones
-RUN mkdir -p sessions && chown -R pptruser:pptruser sessions
-
-USER pptruser
+# Crear carpeta de sesiones
+RUN mkdir -p sessions
 
 EXPOSE 3001
 
