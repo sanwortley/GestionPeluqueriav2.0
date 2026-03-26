@@ -15,6 +15,9 @@ COPY package*.json ./
 # Instalar dependencias
 RUN npm install
 
+# Instalar el navegador Chrome para Puppeteer explícitamente
+RUN npx puppeteer browsers install chrome
+
 # Copiar el resto del código
 COPY . .
 
