@@ -33,12 +33,17 @@ async def send_whatsapp_message(to_phone: str, message: str):
 import threading
 
 def _send_whatsapp_thread(url: str, payload: dict):
+    """
+    Worker for the background thread to avoid blocking the main API response
+    """
     try:
-        with httpx.Client() as client:
-            response = client.post(url, json=payload, timeout=10.0)
-            response.raise_for_status()
+        response = httpx.post(url, json=payload, timeout=30.0)
+        if response.status_code == 200:
+            logger.info("✅ Mensaje de WhatsApp enviado satisfactoriamente vía bridge.")
+        else:
+            logger.error(f"❌ Error del bridge ({response.status_code}): {response.text}")
     except Exception as e:
-        logger.error(f"Failed to send WhatsApp (sync) via bridge: {str(e)}")
+        logger.error(f"❌ Error de conexión al bridge: {str(e)}")
 
 def send_whatsapp_sync(to_phone: str, message: str):
     """
