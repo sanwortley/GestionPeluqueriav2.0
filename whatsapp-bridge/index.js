@@ -31,6 +31,7 @@ function createClient() {
         authStrategy: new LocalAuth({
             dataPath: './sessions'
         }),
+        authTimeoutMs: 0, // No timeout for initial sync
         webVersionCache: {
             type: 'remote',
             remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
@@ -44,21 +45,8 @@ function createClient() {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-gpu',
-                '--disable-extensions',
-                '--disable-component-extensions-with-background-pages',
-                '--disable-default-apps',
-                '--mute-audio',
-                '--no-default-browser-check',
-                '--autoplay-policy=user-gesture-required',
-                '--disable-background-timer-throttling',
-                '--disable-backgrounding-occluded-windows',
-                '--disable-notifications',
-                '--disable-background-networking',
-                '--disable-breakpad',
-                '--disable-component-update',
-                '--disable-domain-reliability',
-                '--disable-sync'
+                '--single-process', // Known to help in limited resource environments
+                '--disable-gpu'
             ],
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined
         }
@@ -128,12 +116,19 @@ app.post('/send', async (req, res) => {
         const chatId = `${to}@c.us`;
 
         console.log(`[SEND] Intentando enviar a ${chatId}...`);
-        const response = await client.sendMessage(chatId, body);
+        
+        // Safety timeout for the send operation
+        const sendPromise = client.sendMessage(chatId, body);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('TIMEOUT_INTERNO_WHATSAPP')), 25000)
+        );
+
+        const response = await Promise.race([sendPromise, timeoutPromise]);
         
         console.log(`[SEND] ✅ Mensaje enviado correctamente a ${chatId}`);
         res.json({ success: true, messageId: response.id?.id });
     } catch (error) {
-        console.error(`[SEND] ❌ Error enviando mensaje a ${to}:`, error);
+        console.error(`[SEND] ❌ Error enviando mensaje a ${to}:`, error.message);
         res.status(500).json({ error: error.message });
     }
 });
