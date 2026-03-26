@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.deps import get_db, get_current_admin
 from app.models.client import Client
-from app.schemas.client import Client as ClientSchema
+from app.schemas.client import Client as ClientSchema, ClientUpdate
 
 router = APIRouter()
 
@@ -26,7 +26,7 @@ def get_clients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(Client).order_by(Client.created_at.desc()).offset(skip).limit(limit).all()
 
 @router.put("/{client_id}", response_model=ClientSchema, dependencies=[Depends(get_current_admin)])
-def update_client(client_id: int, client_in: ClientSchema, db: Session = Depends(get_db)):
+def update_client(client_id: int, client_in: ClientUpdate, db: Session = Depends(get_db)):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
