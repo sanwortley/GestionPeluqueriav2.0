@@ -55,10 +55,10 @@ function createClient() {
         authStrategy: new LocalAuth({
             dataPath: sessionPath
         }),
-        authTimeoutMs: 0, // No timeout for initial sync
+        authTimeoutMs: 60000, 
         webVersionCache: {
             type: 'remote',
-            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1012133516-alpha.html'
         },
         puppeteer: {
             headless: true,
@@ -76,7 +76,8 @@ function createClient() {
                 '--disable-default-apps',
                 '--disable-extensions',
                 '--disable-sync',
-                '--metrics-recording-only'
+                '--metrics-recording-only',
+                '--js-flags="--max-old-space-size=512"' 
             ],
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined
         }
@@ -144,9 +145,7 @@ function createClient() {
 // Global client instance
 client = createClient();
 
-app.get('/status', (req, res) => {
-    res.json({ isReady });
-});
+// Redundant route removed (moved logic to the detailed one below)
 
 let sendQueue = Promise.resolve();
 
