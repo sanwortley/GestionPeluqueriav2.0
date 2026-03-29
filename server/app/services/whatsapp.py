@@ -13,7 +13,10 @@ async def send_whatsapp_message(to_phone: str, message: str):
         return False
 
     clean_phone = to_phone.replace("+", "").replace(" ", "")
-    url = f"{settings.WHATSAPP_BRIDGE_URL}/send"
+    base_url = settings.WHATSAPP_BRIDGE_URL.rstrip("/")
+    url = f"{base_url}/send"
+    
+    logger.info(f"📤 [WHATSAPP] Intentando enviar mensaje a {clean_phone} via {url}")
     
     payload = {
         "to": clean_phone,
@@ -22,12 +25,15 @@ async def send_whatsapp_message(to_phone: str, message: str):
     
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            logger.info(f"WhatsApp message sent to {clean_phone} via bridge")
-            return True
+            response = await client.post(url, json=payload, timeout=10.0)
+            if response.status_code == 200:
+                logger.info(f"✅ [WHATSAPP] Mensaje enviado correctamente a {clean_phone}")
+                return True
+            else:
+                logger.error(f"❌ [WHATSAPP] El bridge respondió con error {response.status_code}: {response.text}")
+                return False
         except Exception as e:
-            logger.error(f"Failed to send WhatsApp message via bridge: {str(e)}")
+            logger.error(f"❌ [WHATSAPP] Error de conexión al bridge en {url}: {str(e)}")
             return False
 
 import threading
@@ -64,6 +70,6 @@ def send_whatsapp_sync(to_phone: str, message: str):
         "body": message
     }
 
-    logger.info(f"📤 Intentando enviar WhatsApp a {clean_phone} via {url}")
+    logger.info(f"📤 [WHATSAPP-SYNC] Iniciando hilo para {clean_phone} via {url}")
     threading.Thread(target=_send_whatsapp_thread, args=(url, payload)).start()
     return True

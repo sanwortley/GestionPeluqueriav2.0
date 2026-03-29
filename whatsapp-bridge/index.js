@@ -20,8 +20,7 @@ app.use(bodyParser.json());
 // CONFIGURATION
 const PORT = process.env.PORT || 3001;
 const BACKEND_URL = process.env.BACKEND_WEBSITE_URL || 'http://127.0.0.1:8001'; // API to notify about incoming messages
-
-let latestQR = null;
+logToFile(`📡 [CONFIG] Backend URL set to: ${BACKEND_URL}`);
 let isReady = false;
 
 let client;
@@ -124,15 +123,16 @@ function createClient() {
         if (body.trim() === '1' || body.trim() === '2') {
             logToFile(`🎯 COINCIDENCIA CON EL "1" o "2"`);
             try {
-                const res = await axios.post(`${BACKEND_URL}/api/webhooks/ultramsg`, {
+                const url = `${BACKEND_URL}/api/webhooks/ultramsg`;
+                const res = await axios.post(url, {
                     data: {
                         body: body.trim(),
                         from: msg.from
                     }
                 });
-                logToFile(`✅ Backend webhook response: ${JSON.stringify(res.data)}`);
+                logToFile(`✅ Backend webhook response from ${url}: ${JSON.stringify(res.data)}`);
             } catch (error) {
-                logToFile(`❌ Error avisando al backend: ${error.message}`);
+                logToFile(`❌ Error avisando al backend en ${BACKEND_URL}: ${error.message}`);
             }
         }
     });

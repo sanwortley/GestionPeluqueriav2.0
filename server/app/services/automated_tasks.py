@@ -60,15 +60,19 @@ def check_confirmations_v2():
 
                 logger.info(f"ID {aid} ({row.client_name}): Lead={lead_time}, Until={time_until}")
 
+                is_today = (appt_dt.date() == now.date())
+
                 should_send = False
-                if lead_time >= timedelta(hours=24):
-                    if time_until <= timedelta(hours=25): 
+                if not is_today:
+                    # Regla Futura: 24 horas antes del turno (o menos si queda poco para mañana)
+                    if time_until <= timedelta(hours=24): 
                         should_send = True
-                        logger.info(f"  > Cumple REGLA 24H")
+                        logger.info(f"  > Cumple REGLA 24H (Turno a futuro, falta menos de un día)")
                 else:
-                    if time_until <= timedelta(minutes=75): 
+                    # Regla del Día: 3 horas antes o en el momento si ya estamos cerca
+                    if time_until <= timedelta(hours=3): 
                         should_send = True
-                        logger.info(f"  > Cumple REGLA 1H")
+                        logger.info(f"  > Cumple REGLA 3H (Turno para hoy mismo)")
 
                 if should_send:
                     msg = (f"👋 Hola {row.client_name}\n\n"
@@ -101,5 +105,13 @@ def check_confirmations_v2():
 
 def start_scheduler():
     if not scheduler.get_jobs():
-        scheduler.add_job(check_confirmations_v2, trigger=IntervalTrigger(minutes=15), id="check_confirmations", replace_existing=True)
+        # Usamos next_run_time=datetime.now() para que la primera ejecución sea inmediata
+        # pero gestionada por el scheduler, evitando doble ejecución manual.
+        scheduler.add_job(
+            check_confirmations_v2, 
+            trigger=IntervalTrigger(minutes=1), 
+            id="check_confirmations", 
+            replace_existing=True,
+            next_run_time=datetime.now()
+        )
         scheduler.start()
