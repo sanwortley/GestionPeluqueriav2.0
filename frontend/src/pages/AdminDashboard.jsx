@@ -557,21 +557,32 @@ export default function AdminDashboard() {
                                                 {e.isBlock ? e.resource.start_time : format(e.start, 'HH:mm')}
                                             </strong>
                                             {!e.isBlock && (
-                                                <span style={{
-                                                    fontSize: '0.6rem',
-                                                    padding: '3px 8px',
-                                                    borderRadius: '12px',
-                                                    background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
-                                                        (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
-                                                            (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
-                                                    color: e.resource.status === 'CONFIRMED' ? '#34D399' :
-                                                        (e.resource.status === 'FINISHED' ? '#60A5FA' :
-                                                            (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
-                                                    fontWeight: 'bold',
-                                                    border: '1px solid currentColor'
-                                                }}>
-                                                    {e.resource.status}
-                                                </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                                    <span style={{
+                                                        fontSize: '0.6rem',
+                                                        padding: '3px 8px',
+                                                        borderRadius: '12px',
+                                                        background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
+                                                            (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
+                                                                (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
+                                                        color: e.resource.status === 'CONFIRMED' ? '#34D399' :
+                                                            (e.resource.status === 'FINISHED' ? '#60A5FA' :
+                                                                (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
+                                                        fontWeight: 'bold',
+                                                        border: '1px solid currentColor'
+                                                    }}>
+                                                        {e.resource.status}
+                                                    </span>
+                                                    <i
+                                                        onClick={(ev) => {
+                                                            ev.stopPropagation();
+                                                            handleDeleteAppointment(e.id.replace('appt-', ''))
+                                                        }}
+                                                        className="fas fa-trash"
+                                                        style={{ fontSize: '1rem', color: 'rgba(239, 68, 68, 0.5)', cursor: 'pointer', padding: '5px' }}
+                                                        title="Eliminar permanentemente"
+                                                    ></i>
+                                                </div>
                                             )}
                                         </div>
 
@@ -603,9 +614,6 @@ export default function AdminDashboard() {
                                                     )}
                                                      {e.resource.status === 'CONFIRMED' && (
                                                          <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')} className="btn btn-primary w-full" style={{ backgroundColor: '#10B981' }}>Cerrar Turno</button>
-                                                     )}
-                                                     {e.resource.status === 'CANCELLED' && (
-                                                         <button onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))} className="btn btn-danger w-full">Eliminar permanentemente</button>
                                                      )}
                                                 </>
                                             )}
