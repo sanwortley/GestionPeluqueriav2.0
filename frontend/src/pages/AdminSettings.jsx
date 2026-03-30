@@ -283,7 +283,7 @@ export default function AdminSettings() {
                                     style={{ fontSize: '0.75rem', justifyContent: 'center', padding: '0.6rem', color: '#FBBF24', borderColor: '#FBBF24' }}
                                     disabled={waLoading}
                                 >
-                                    🔔 Reenviar Notificaciones Pendientes
+                                    🔔 Reenviar Notificaciones Colgadas
                                 </button>
                             </div>
                         </div>
