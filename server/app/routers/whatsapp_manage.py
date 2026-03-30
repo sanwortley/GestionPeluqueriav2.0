@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 import httpx
 import logging
 from app.core.deps import get_current_admin
@@ -41,3 +42,23 @@ async def logout_whatsapp():
     except Exception as e:
         logger.error(f"Error logging out WhatsApp: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error connecting to bridge: {str(e)}")
+
+@router.post("/test-send", dependencies=[Depends(get_current_admin)])
+async def test_send_whatsapp(phone: str, message: str):
+    """
+    Manually send a test message to a specific number.
+    """
+    from app.services.whatsapp import send_whatsapp_sync
+    success = send_whatsapp_sync(phone, message)
+    if not success:
+        raise HTTPException(status_code=500, detail="Could not trigger message. Check bridge URL.")
+    return {"ok": True, "message": "Test message triggered in background"}
+
+@router.post("/retroactive-notify", dependencies=[Depends(get_current_admin)])
+async def trigger_retroactive_notifications(days: int = 4, db: Session = Depends(get_db)):
+    """
+    Triggers retroactive creation notifications for future PENDING appointments.
+    """
+    from app.services.appointment_service import send_retro_notifications
+    count = send_retro_notifications(db, days_back=days)
+    return {"ok": True, "notifications_sent": count}

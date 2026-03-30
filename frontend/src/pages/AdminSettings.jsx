@@ -43,6 +43,32 @@ export default function AdminSettings() {
         }
     };
 
+    const handleTestSend = async () => {
+        const phone = window.prompt("Ingresá un número de teléfono (con código de país, ej: 549...)");
+        if (!phone) return;
+        const msg = window.prompt("Mensaje de prueba", "Este es un mensaje de prueba desde el panel.");
+        if (!msg) return;
+        try {
+            await api.post('whatsapp/test-send?phone=' + encodeURIComponent(phone) + '&message=' + encodeURIComponent(msg));
+            alert("Prueba enviada en segundo plano. Revisá los logs de Railway o el celular del destinatario.");
+        } catch(e) {
+            alert("Error al enviar prueba: " + (e.response?.data?.detail || e.message));
+        }
+    };
+
+    const handleRetroactive = async () => {
+        if (!window.confirm("¿Estás seguro de que querés reenviar las notificaciones de creación (bienvenida) a todos los turnos futuros de los últimos 4 días? Esto podría causar mensajes duplicados en algunos clientes.")) return;
+        try {
+            setWaLoading(true);
+            const res = await api.post('whatsapp/retroactive-notify');
+            alert(`✅ Proceso completado con éxito.\nSe enviaron ${res.data.notifications_sent} notificaciones.`);
+        } catch(e) {
+            alert("Error al ejecutar proceso retroactivo: " + (e.response?.data?.detail || e.message));
+        } finally {
+            setWaLoading(false);
+        }
+    };
+
     const handleUpdatePassword = async (e) => {
         e.preventDefault();
         setMessage({ type: '', text: '' });
@@ -240,6 +266,27 @@ export default function AdminSettings() {
                         >
                             {waLoading ? 'Cerrando sesión...' : 'Desvincular WhatsApp Actual'}
                         </button>
+
+                        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--primary)' }}>Herramientas de Diagnóstico</h4>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                                <button
+                                    onClick={handleTestSend}
+                                    className="btn btn-secondary"
+                                    style={{ fontSize: '0.75rem', justifyContent: 'center', padding: '0.6rem' }}
+                                >
+                                    🚀 Enviar Mensaje de Prueba
+                                </button>
+                                <button
+                                    onClick={handleRetroactive}
+                                    className="btn btn-secondary"
+                                    style={{ fontSize: '0.75rem', justifyContent: 'center', padding: '0.6rem', color: '#FBBF24', borderColor: '#FBBF24' }}
+                                    disabled={waLoading}
+                                >
+                                    🔔 Reenviar Notificaciones Pendientes
+                                </button>
+                            </div>
+                        </div>
                     </>
                 )}
             </div>
