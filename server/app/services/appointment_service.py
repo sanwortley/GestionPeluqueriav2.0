@@ -230,16 +230,17 @@ def delete_appointment(db: Session, id: int) -> bool:
 
 def send_retro_notifications(db: Session, days_back: int = 4) -> int:
     """
-    Sends the "Turno registrado" message to clients who missed it because of the bug.
-    Only for future PENDING appointments.
+    Sends appropriate notification messages (Registration or Confirmation) to clients 
+    who missed them during the bridge failure.
     """
     from datetime import datetime, timedelta
     now = datetime.now()
     today = now.date()
     start_created_at = now - timedelta(days=days_back)
     
+    # Buscamos turnos futuros creados recientemente que estén PENDING o CONFIRMED
     query = db.query(Appointment).filter(
-        Appointment.status == AppointmentStatus.PENDING,
+        Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED]),
         Appointment.date >= today,
         Appointment.created_at >= start_created_at
     )
@@ -248,15 +249,27 @@ def send_retro_notifications(db: Session, days_back: int = 4) -> int:
     count = 0
     for appt in appts:
         date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
-        service_name = appt.service.name if appt.service else "tu servicio"
         
-        msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
-               f"📅 Fecha: {date_formatted}\n"
-               f"🕒 Hora: {appt.start_time} hs\n"
-               f"✨ Servicio: {service_name}\n\n"
-               f"✅ *Tu turno ha sido registrado correctamente.*\n"
-               f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
+        if appt.status == AppointmentStatus.PENDING:
+            # Mensaje de Registro / Bienvenida
+            service_name = appt.service.name if appt.service else "tu servicio"
+            msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
+                   f"📅 Fecha: {date_formatted}\n"
+                   f"🕒 Hora: {appt.start_time} hs\n"
+                   f"✨ Servicio: {service_name}\n\n"
+                   f"✅ *Tu turno ha sido registrado correctamente.*\n"
+                   f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
         
+        elif appt.status == AppointmentStatus.CONFIRMED:
+            # Mensaje de Confirmación
+            msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Tu turno en Roma Cabello ha sido *CONFIRMADO* por el peluquero.\n"
+                   f"📅 Fecha: {date_formatted}\n"
+                   f"🕒 Hora: {appt.start_time} hs\n"
+                   f"¡Te esperamos!")
+        
+        else:
+            continue
+
         if send_whatsapp_sync(appt.client_phone, msg):
             count += 1
             
