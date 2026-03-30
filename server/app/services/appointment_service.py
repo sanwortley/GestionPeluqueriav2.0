@@ -94,7 +94,11 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
                   f"✨ Servicio: {service.name}\n\n"
                   f"✅ *Tu turno ha sido registrado correctamente.*\n"
                   f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
-    send_whatsapp_sync(appt.client_phone, client_msg)
+    
+    if send_whatsapp_sync(appt.client_phone, client_msg):
+        # We assume it was triggered. We mark as notified.
+        appt.notified_at = datetime.now()
+        db.commit()
     
     return appt
 
@@ -141,7 +145,9 @@ def confirm_appointment(db: Session, id: int) -> Appointment:
     logger = logging.getLogger(__name__)
     logger.info(f"🔔 [CONFIRM] Iniciando notificación para {appt.client_phone} (Turno ID: {appt.id})")
     
-    send_whatsapp_sync(appt.client_phone, msg)
+    if send_whatsapp_sync(appt.client_phone, msg):
+        appt.notified_at = datetime.now()
+        db.commit()
     
     return appt
 
@@ -233,44 +239,71 @@ def send_retro_notifications(db: Session, days_back: int = 4) -> int:
     Sends appropriate notification messages (Registration or Confirmation) to clients 
     who missed them during the bridge failure.
     """
-    from datetime import datetime, timedelta
+    appts = get_pending_notifications(db, days_back)
+    count = 0
+    for appt in appts:
+        if send_single_notification(db, appt.id):
+            count += 1
+    return count
+
+def get_pending_notifications(db: Session, days_back: int = 7) -> list[Appointment]:
+    """
+    Lists future PENDING or CONFIRMED appointments that haven't been notified yet.
+    """
+    from datetime import timedelta
     now = datetime.now()
     today = now.date()
     start_created_at = now - timedelta(days=days_back)
     
-    # Buscamos turnos futuros creados recientemente que estén PENDING o CONFIRMED
-    query = db.query(Appointment).filter(
+    return db.query(Appointment).filter(
+        Appointment.notified_at.is_(None),
         Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED]),
         Appointment.date >= today,
         Appointment.created_at >= start_created_at
-    )
-    
-    appts = query.all()
-    count = 0
-    for appt in appts:
-        date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
-        
-        if appt.status == AppointmentStatus.PENDING:
-            # Mensaje de Registro / Bienvenida
-            service_name = appt.service.name if appt.service else "tu servicio"
-            msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
-                   f"📅 Fecha: {date_formatted}\n"
-                   f"🕒 Hora: {appt.start_time} hs\n"
-                   f"✨ Servicio: {service_name}\n\n"
-                   f"✅ *Tu turno ha sido registrado correctamente.*\n"
-                   f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
-        
-        elif appt.status == AppointmentStatus.CONFIRMED:
-            # Mensaje de Confirmación
-            msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Tu turno en Roma Cabello ha sido *CONFIRMADO* por el peluquero.\n"
-                   f"📅 Fecha: {date_formatted}\n"
-                   f"🕒 Hora: {appt.start_time} hs\n"
-                   f"¡Te esperamos!")
-        
-        else:
-            continue
+    ).order_by(Appointment.date.asc(), Appointment.created_at.asc()).all()
 
-        if send_whatsapp_sync(appt.client_phone, msg):
-            count += 1
-            
-    return count
+def send_single_notification(db: Session, appt_id: int) -> bool:
+    """
+    Sends the manual notification (Reg or Confirm) for a single appointment.
+    """
+    appt = db.query(Appointment).filter(Appointment.id == appt_id).first()
+    if not appt:
+        return False
+        
+    date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
+    
+    if appt.status == AppointmentStatus.PENDING:
+        # Mensaje de Registro / Bienvenida
+        service_name = appt.service.name if appt.service else "tu servicio"
+        msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
+               f"📅 Fecha: {date_formatted}\n"
+               f"🕒 Hora: {appt.start_time} hs\n"
+               f"✨ Servicio: {service_name}\n\n"
+               f"✅ *Tu turno ha sido registrado correctamente.*\n"
+               f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
+    
+    elif appt.status == AppointmentStatus.CONFIRMED:
+        # Mensaje de Confirmación
+        msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Tu turno en Roma Cabello ha sido *CONFIRMADO* por el peluquero.\n"
+               f"📅 Fecha: {date_formatted}\n"
+               f"🕒 Hora: {appt.start_time} hs\n"
+               f"¡Te esperamos!")
+    else:
+        return False
+
+    if send_whatsapp_sync(appt.client_phone, msg):
+        appt.notified_at = datetime.now()
+        db.commit()
+        return True
+    return False
+
+def dismiss_notification(db: Session, appt_id: int) -> bool:
+    """
+    Clears the notification status without sending a message.
+    """
+    appt = db.query(Appointment).filter(Appointment.id == appt_id).first()
+    if appt:
+        appt.notified_at = datetime.now()
+        db.commit()
+        return True
+    return False

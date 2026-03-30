@@ -62,3 +62,43 @@ async def trigger_retroactive_notifications(days: int = 4, db: Session = Depends
     from app.services.appointment_service import send_retro_notifications
     count = send_retro_notifications(db, days_back=days)
     return {"ok": True, "notifications_sent": count}
+
+@router.get("/pending-notifs", dependencies=[Depends(get_current_admin)])
+async def get_pending_notifications_endpoint(days: int = 7, db: Session = Depends(get_db)):
+    """
+    Returns a list of future appointments that haven't been notified yet.
+    """
+    from app.services.appointment_service import get_pending_notifications
+    appts = get_pending_notifications(db, days_back=days)
+    return [{
+        "id": a.id,
+        "client_name": a.client_name,
+        "client_phone": a.client_phone,
+        "date": a.date,
+        "start_time": a.start_time,
+        "status": a.status,
+        "created_at": a.created_at,
+        "service_name": a.service.name if a.service else "N/A"
+    } for a in appts]
+
+@router.post("/send-single/{appt_id}", dependencies=[Depends(get_current_admin)])
+async def send_single_notification_endpoint(appt_id: int, db: Session = Depends(get_db)):
+    """
+    Triggers notification for a single appointment.
+    """
+    from app.services.appointment_service import send_single_notification
+    success = send_single_notification(db, appt_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Could not send notification. Appointment not found or already notified.")
+    return {"ok": True}
+
+@router.post("/dismiss/{appt_id}", dependencies=[Depends(get_current_admin)])
+async def dismiss_notification_endpoint(appt_id: int, db: Session = Depends(get_db)):
+    """
+    Marks an appointment as notified without sending a message.
+    """
+    from app.services.appointment_service import dismiss_notification
+    success = dismiss_notification(db, appt_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    return {"ok": True}

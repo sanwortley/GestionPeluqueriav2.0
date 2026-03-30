@@ -9,9 +9,12 @@ export default function AdminSettings() {
     });
     const [newEmail, setNewEmail] = useState('');
     const [loading, setLoading] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [waLoading, setWaLoading] = useState(false);
     const [waStatus, setWaStatus] = useState(null);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [pendingNotifs, setPendingNotifs] = useState([]);
 
     useEffect(() => {
         fetchWhatsAppStatus();
@@ -283,10 +286,73 @@ export default function AdminSettings() {
                                     style={{ fontSize: '0.75rem', justifyContent: 'center', padding: '0.6rem', color: '#FBBF24', borderColor: '#FBBF24' }}
                                     disabled={waLoading}
                                 >
-                                    🔔 Reenviar Notificaciones Colgadas
+                                    🔔 Reenviar Todos los Colgados
                                 </button>
                             </div>
                         </div>
+
+                        {pendingNotifs.length > 0 && (
+                            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#FBBF24' }}>
+                                    ⚠️ Notificaciones Pendientes ({pendingNotifs.length})
+                                </h4>
+                                <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
+                                    <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                                <th style={{ padding: '0.5rem' }}>Cliente</th>
+                                                <th style={{ padding: '0.5rem' }}>Fecha</th>
+                                                <th style={{ padding: '0.5rem' }}>Estado</th>
+                                                <th style={{ padding: '0.5rem' }}>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {pendingNotifs.map(notif => (
+                                                <tr key={notif.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        <div style={{ fontWeight: 'bold' }}>{notif.client_name}</div>
+                                                        <div style={{ fontSize: '0.65rem', opacity: 0.7 }}>{notif.client_phone}</div>
+                                                    </td>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        {new Date(notif.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}
+                                                        <div style={{ fontSize: '0.65rem', opacity: 0.7 }}>{notif.start_time} hs</div>
+                                                    </td>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        <span style={{ 
+                                                            fontSize: '0.6rem', 
+                                                            padding: '2px 6px', 
+                                                            borderRadius: '4px',
+                                                            background: notif.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                                                            color: notif.status === 'CONFIRMED' ? '#10B981' : '#EAB308'
+                                                        }}>
+                                                            {notif.status === 'CONFIRMED' ? 'CONFIRMADO' : 'PENDIENTE'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '0.5rem', whiteSpace: 'nowrap' }}>
+                                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                                            <button 
+                                                                title="Enviar ahora"
+                                                                onClick={() => handleSendSingle(notif.id)}
+                                                                style={{ background: '#10B981', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', cursor: 'pointer' }}
+                                                            >
+                                                                🚀
+                                                            </button>
+                                                            <button 
+                                                                title="Ignorar"
+                                                                onClick={() => handleDismiss(notif.id)}
+                                                                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', cursor: 'pointer' }}
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
             </div>

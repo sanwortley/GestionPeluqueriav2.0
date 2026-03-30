@@ -33,6 +33,7 @@ class Appointment(Base):
     
     # Tracking para confirmaciones
     confirmation_sent_at = Column(DateTime(timezone=True), nullable=True)  # Cuando se envió la solicitud de confirmación
+    notified_at = Column(DateTime(timezone=True), nullable=True)           # Cuando se envió el registro o confirmación manual
 
     service = relationship("Service")
     staff = relationship("Staff")
