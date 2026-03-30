@@ -13,7 +13,7 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 @router.post("/login", response_model=Token)
-@limiter.limit("60/minute")
+@limiter.limit("5/minute")
 def login_access_token(request: Request, db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
     user = db.query(AdminUser).filter(AdminUser.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):

@@ -25,11 +25,21 @@ from app.services.automated_tasks import start_scheduler
 def startup_event():
     start_scheduler()
 
-# Security Middleware (Temporarily disabled to fix CORS issue)
-# app.add_middleware(
-#     TrustedHostMiddleware, 
-#     allowed_hosts=["localhost", "127.0.0.1", "roma-cabello.com", "*.roma-cabello.com", "romacabello.com.ar", "*.romacabello.com.ar", "onrender.com", "*.onrender.com"]
-# )
+# Security Middleware
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=[
+        "localhost", 
+        "127.0.0.1", 
+        "roma-cabello.com", 
+        "www.roma-cabello.com",
+        "romacabello.com.ar", 
+        "www.romacabello.com.ar", 
+        "roma-cabello-backend.onrender.com",
+        "onrender.com", 
+        "*.onrender.com"
+    ]
+)
 
 if settings.ENVIRONMENT == "production":
     app.add_middleware(HTTPSRedirectMiddleware)
