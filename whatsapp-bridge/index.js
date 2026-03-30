@@ -116,22 +116,26 @@ function createClient() {
 
     newClient.on('message_create', async (msg) => {
         const from = msg.from;
-        const body = msg.body || "";
-        logToFile(`[DETECCION] De: ${from} | Body: "${body}" | FromMe: ${msg.fromMe}`);
+        const body = (msg.body || "").trim();
 
-        if (msg.from === 'status@broadcast') return;
+        // 1. Ignore background broadcast status
+        if (from === 'status@broadcast') return;
+        
+        // 2. Ignore ALL group messages for privacy
+        if (from.endsWith('@g.us')) return;
 
-        if (body.trim() === '1' || body.trim() === '2') {
-            logToFile(`🎯 COINCIDENCIA CON EL "1" o "2"`);
+        // 3. Only process and log if it's a potential appointment response (1 or 2)
+        if (body === '1' || body === '2') {
+            logToFile(`🎯 [RESPUESTA] Coincidencia con "${body}" desde ${from}`);
             try {
                 const url = `${BACKEND_URL}/api/webhooks/ultramsg`;
                 const res = await axios.post(url, {
                     data: {
-                        body: body.trim(),
-                        from: msg.from
+                        body: body,
+                        from: from
                     }
                 });
-                logToFile(`✅ Backend webhook response from ${url}: ${JSON.stringify(res.data)}`);
+                logToFile(`✅ Backend webhook response: ${JSON.stringify(res.data)}`);
             } catch (error) {
                 logToFile(`❌ Error avisando al backend en ${BACKEND_URL}: ${error.message}`);
             }
