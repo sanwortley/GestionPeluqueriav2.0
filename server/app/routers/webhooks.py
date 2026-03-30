@@ -64,8 +64,9 @@ async def ultramsg_webhook(request: Request, db: Session = Depends(get_db)):
         db.commit()
         
         # Notify Client
+        date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
         confirm_msg = (f"✅ ¡Gracias {appt.client_name}! Tu turno ha sido CONFIRMADO. "
-                       f"Te esperamos el {appt.date} a las {appt.start_time}.")
+                       f"Te esperamos el {date_formatted} a las {appt.start_time} hs.")
         send_whatsapp_sync(appt.client_phone, confirm_msg)
         
         # Notify Admin

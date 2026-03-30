@@ -86,9 +86,10 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
     send_telegram_sync(admin_msg)
 
     # Notify Client (Request Received)
+    date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
     client_msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
-                  f"📅 Fecha: {appt.date}\n"
-                  f"🕒 Hora: {appt.start_time}\n"
+                  f"📅 Fecha: {date_formatted}\n"
+                  f"🕒 Hora: {appt.start_time} hs\n"
                   f"✨ Servicio: {service.name}\n\n"
                   f"✅ *Tu turno ha sido registrado correctamente.*\n"
                   f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
@@ -124,13 +125,15 @@ def confirm_appointment(db: Session, id: int) -> Appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     
     appt.status = AppointmentStatus.CONFIRMED
+    appt.confirmation_sent_at = datetime.now() # Marcar como ya notificado
     db.commit()
     db.refresh(appt)
     
     # Notify Client via WhatsApp
+    date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
     msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Tu turno en Roma Cabello ha sido **CONFIRMADO** por el peluquero.\n"
-           f"📅 Fecha: {appt.date}\n"
-           f"🕒 Hora: {appt.start_time}\n"
+           f"📅 Fecha: {date_formatted}\n"
+           f"🕒 Hora: {appt.start_time} hs\n"
            f"¡Te esperamos!")
     send_whatsapp_sync(appt.client_phone, msg)
     

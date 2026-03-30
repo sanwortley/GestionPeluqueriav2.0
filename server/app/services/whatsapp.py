@@ -43,13 +43,15 @@ def _send_whatsapp_thread(url: str, payload: dict):
     Worker for the background thread to avoid blocking the main API response
     """
     try:
+        clean_msg = payload.get("body", "")[:30].replace("\n", " ") + "..."
+        logger.info(f"🚀 [THREAD-WHATSAPP] Enviando a {payload.get('to')}: {clean_msg}")
         response = httpx.post(url, json=payload, timeout=30.0)
         if response.status_code == 200:
-            logger.info("✅ Mensaje de WhatsApp enviado satisfactoriamente vía bridge.")
+            logger.info(f"✅ [THREAD-WHATSAPP] Mensaje enviado a {payload.get('to')}")
         else:
-            logger.error(f"❌ Error del bridge ({response.status_code}): {response.text}")
+            logger.error(f"❌ [THREAD-WHATSAPP] Error del bridge ({response.status_code}): {response.text}")
     except Exception as e:
-        logger.error(f"❌ Error de conexión al bridge: {str(e)}")
+        logger.error(f"❌ [THREAD-WHATSAPP] Error de conexión al bridge: {str(e)}")
 
 def send_whatsapp_sync(to_phone: str, message: str):
     """

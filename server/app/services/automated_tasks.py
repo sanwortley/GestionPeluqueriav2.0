@@ -25,7 +25,7 @@ def check_confirmations_v2():
         today = now.date()
         
         q = db.query(Appointment.id).filter(
-            Appointment.status == AppointmentStatus.PENDING,
+            Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED]),
             Appointment.confirmation_sent_at.is_(None),
             Appointment.date >= today,
             Appointment.date <= limit_date
@@ -37,7 +37,7 @@ def check_confirmations_v2():
             row = db.query(
                 Appointment.id, Appointment.client_name, Appointment.client_phone, 
                 Appointment.service_id, Appointment.date, Appointment.start_time, 
-                Appointment.created_at
+                Appointment.created_at, Appointment.status
             ).filter(Appointment.id == aid).first()
             if not row: continue
 
@@ -75,12 +75,24 @@ def check_confirmations_v2():
                         logger.info(f"  > Cumple REGLA 3H (Turno para hoy mismo)")
 
                 if should_send:
-                    msg = (f"👋 Hola {row.client_name}\n\n"
-                           f"Confirmación de tu turno en *Roma Cabello*:\n"
-                           f"📅 *{row.date.strftime('%d/%m')}*\n"
-                           f"⏰ *{row.start_time} hs*\n"
-                           f"💇‍♀️ {service_name}\n\n"
-                           f"⚠️ Respondé con un 1 para confirmar o un 2 para cancelar.")
+                    date_formatted = row.date.strftime("%d/%m") if hasattr(row.date, 'strftime') else str(row.date)
+                    
+                    if row.status == AppointmentStatus.PENDING:
+                        # Request Confirmation
+                        msg = (f"👋 Hola {row.client_name}\n\n"
+                               f"Confirmación de tu turno en *Roma Cabello*:\n"
+                               f"📅 *{date_formatted}*\n"
+                               f"⏰ *{row.start_time} hs*\n"
+                               f"💇‍♀️ {service_name}\n\n"
+                               f"⚠️ Respondé con un 1 para confirmar o un 2 para cancelar.")
+                    else:
+                        # Simple Reminder for already CONFIRMED
+                        msg = (f"👋 ¡Hola {row.client_name}!\n\n"
+                               f"Te recordamos tu turno hoy en *Roma Cabello*:\n"
+                               f"📅 *{date_formatted}*\n"
+                               f"⏰ *{row.start_time} hs*\n"
+                               f"💇‍♀️ {service_name}\n\n"
+                               f"¡Te esperamos!")
                     
                     logger.info(f"  > Intentando enviar WhatsApp a {row.client_phone}...")
                     sent_ok = send_whatsapp_sync(row.client_phone, msg)
