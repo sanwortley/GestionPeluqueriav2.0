@@ -132,10 +132,15 @@ def confirm_appointment(db: Session, id: int) -> Appointment:
     
     # Notify Client via WhatsApp
     date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
-    msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Tu turno en Roma Cabello ha sido **CONFIRMADO** por el peluquero.\n"
+    msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Tu turno en Roma Cabello ha sido *CONFIRMADO* por el peluquero.\n"
            f"📅 Fecha: {date_formatted}\n"
            f"🕒 Hora: {appt.start_time} hs\n"
            f"¡Te esperamos!")
+    
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"🔔 [CONFIRM] Iniciando notificación para {appt.client_phone} (Turno ID: {appt.id})")
+    
     send_whatsapp_sync(appt.client_phone, msg)
     
     return appt

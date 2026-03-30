@@ -44,14 +44,19 @@ def _send_whatsapp_thread(url: str, payload: dict):
     """
     try:
         clean_msg = payload.get("body", "")[:30].replace("\n", " ") + "..."
-        logger.info(f"🚀 [THREAD-WHATSAPP] Enviando a {payload.get('to')}: {clean_msg}")
-        response = httpx.post(url, json=payload, timeout=30.0)
-        if response.status_code == 200:
-            logger.info(f"✅ [THREAD-WHATSAPP] Mensaje enviado a {payload.get('to')}")
-        else:
-            logger.error(f"❌ [THREAD-WHATSAPP] Error del bridge ({response.status_code}): {response.text}")
+        to_phone = payload.get("to")
+        logger.info(f"🚀 [THREAD-WHATSAPP] Iniciando envío a {to_phone}: {clean_msg}")
+        
+        # Usar un cliente síncrono explícito para asegurar cierre de recursos
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(url, json=payload)
+            
+            if response.status_code == 200:
+                logger.info(f"✅ [THREAD-WHATSAPP] Mensaje enviado a {to_phone}")
+            else:
+                logger.error(f"❌ [THREAD-WHATSAPP] El bridge respondió con error {response.status_code} para {to_phone}: {response.text}")
     except Exception as e:
-        logger.error(f"❌ [THREAD-WHATSAPP] Error de conexión al bridge: {str(e)}")
+        logger.error(f"❌ [THREAD-WHATSAPP] Error de conexión al bridge {url}: {str(e)}")
 
 def send_whatsapp_sync(to_phone: str, message: str):
     """
