@@ -151,7 +151,47 @@ client = createClient();
 
 // Redundant route removed (moved logic to the detailed one below)
 
-let sendQueue = Promise.resolve();
+let messageQueue = [];
+let isProcessing = false;
+
+async function processQueue() {
+    if (isProcessing || messageQueue.length === 0) return;
+    isProcessing = true;
+
+    while (messageQueue.length > 0) {
+        const item = messageQueue[0];
+        const { to, body, res } = item;
+
+        try {
+            console.log(`[QUEUE] Procesando (${messageQueue.length} pendientes): ${to}`);
+            const chatId = `${to}@c.us`;
+
+            // Safety timeout for the send operation
+            const sendPromise = client.sendMessage(chatId, body);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('TIMEOUT_INTERN_WA')), 25000)
+            );
+
+            const response = await Promise.race([sendPromise, timeoutPromise]);
+            
+            console.log(`[SEND] ✅ Mensaje enviado a ${chatId}`);
+            if (!res.headersSent) {
+                res.json({ success: true, messageId: response.id?.id });
+            }
+        } catch (error) {
+            console.error(`[SEND] ❌ Error a ${to}:`, error.message);
+            if (!res.headersSent) {
+                res.status(500).json({ error: error.message });
+            }
+        }
+
+        messageQueue.shift();
+        // Breve pausa para no saturar
+        await new Promise(r => setTimeout(r, 500));
+    }
+
+    isProcessing = false;
+}
 
 // API Endpoint to send messages from Python
 app.post('/send', async (req, res) => {
@@ -159,43 +199,20 @@ app.post('/send', async (req, res) => {
     if (!to || !body) return res.status(400).json({ error: 'Missing "to" or "body"' });
 
     if (!isReady) {
-        console.warn(`[SEND] ❌ Intento de envío denegado: El puente aún no está listo.`);
-        return res.status(503).json({ error: 'WhatsApp bridge is not ready. Scan QR first at /qr' });
+        console.warn(`[SEND] ❌ Intento denegado: Puente no listo.`);
+        return res.status(503).json({ error: 'WhatsApp bridge is not ready.' });
     }
 
-    // Use a queue to serialize all sendMessage calls
-    sendQueue = sendQueue.then(async () => {
-        try {
-            to = to.replace(/\D/g, '');
-            if (to.length === 10) to = '549' + to;
-            else if (to.length === 12 && to.startsWith('15')) to = '549' + to.substring(2);
-            else if (to.startsWith('54') && to.length === 12 && to[2] !== '9') to = '549' + to.substring(2);
-            else if (to.startsWith('5490')) to = '549' + to.substring(4);
-            
-            console.log(`[SEND] Procesando mensaje para: ${to}`);
-            const chatId = `${to}@c.us`;
+    to = to.replace(/\D/g, '');
+    if (to.length === 10) to = '549' + to;
+    else if (to.length === 12 && to.startsWith('15')) to = '549' + to.substring(2);
+    else if (to.startsWith('54') && to.length === 12 && (to[2] !== '9')) to = '549' + to.substring(2);
+    else if (to.startsWith('5490')) to = '549' + to.substring(4);
 
-            // Safety timeout for the send operation
-            const sendPromise = client.sendMessage(chatId, body);
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('TIMEOUT_INTERNO_WHATSAPP')), 45000)
-            );
-
-            const response = await Promise.race([sendPromise, timeoutPromise]);
-            
-            console.log(`[SEND] ✅ Mensaje enviado correctamente a ${chatId}`);
-            res.json({ success: true, messageId: response.id?.id });
-        } catch (error) {
-            console.error(`[SEND] ❌ Error enviando mensaje a ${to}:`, error.message);
-            // If the error was a real send error (not a timeout queue issue), 
-            // we should still resolve the queue so next messages can proceed
-            if (!res.headersSent) {
-                res.status(500).json({ error: error.message });
-            }
-        }
-    }).catch(err => {
-        console.error('CRITICAL: Queue error:', err);
-    });
+    // Añadir a la cola y disparar proceso
+    messageQueue.push({ to, body, res, timestamp: new Date() });
+    console.log(`[QUEUE] Nuevo mensaje para ${to}. Total en cola: ${messageQueue.length}`);
+    processQueue();
 });
 
 app.get('/status', (req, res) => {
@@ -208,7 +225,13 @@ app.get('/status', (req, res) => {
     res.json({
         isReady: isReady,
         hasQR: !!latestQR,
-        sessionInfo: sInfo
+        sessionInfo: sInfo,
+        queueLength: messageQueue.length,
+        pendingMessages: messageQueue.map(m => ({ 
+            to: m.to, 
+            timestamp: m.timestamp,
+            bodyPreview: m.body.substring(0, 20) + "..."
+        }))
     });
 });
 

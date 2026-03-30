@@ -127,17 +127,62 @@ export default function AdminSettings() {
                 </div>
 
                 {waStatus?.isReady && waStatus?.sessionInfo && (
-                    <div style={{ 
-                        marginBottom: '1.5rem', 
-                        padding: '10px', 
-                        backgroundColor: 'rgba(255,255,255,0.05)', 
-                        borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        color: '#9CA3AF'
-                    }}>
-                        <div style={{ marginBottom: '4px' }}>📱 <strong>Sesión:</strong> {waStatus.sessionInfo.pushname} ({waStatus.sessionInfo.wid})</div>
-                        <div>💻 <strong>Plataforma:</strong> {waStatus.sessionInfo.platform}</div>
-                    </div>
+                    <>
+                        <div style={{ 
+                            marginBottom: '1rem', 
+                            padding: '10px', 
+                            backgroundColor: 'rgba(255,255,255,0.05)', 
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            color: '#9CA3AF'
+                        }}>
+                            <div style={{ marginBottom: '4px' }}>📱 <strong>Sesión:</strong> {waStatus.sessionInfo.pushname} ({waStatus.sessionInfo.wid})</div>
+                            <div>💻 <strong>Plataforma:</strong> {waStatus.sessionInfo.platform}</div>
+                        </div>
+
+                        {/* Nueva sección de cola */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)' }}>Cola de Mensajes</h4>
+                                <span style={{ 
+                                    fontSize: '0.7rem', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '10px', 
+                                    backgroundColor: waStatus.queueLength > 0 ? '#F59E0B' : '#6B7280',
+                                    color: '#fff'
+                                }}>
+                                    {waStatus.queueLength} pendientes
+                                </span>
+                            </div>
+                            
+                            {waStatus.pendingMessages && waStatus.pendingMessages.length > 0 ? (
+                                <div style={{ 
+                                    maxHeight: '150px', 
+                                    overflowY: 'auto', 
+                                    fontSize: '0.75rem', 
+                                    backgroundColor: 'rgba(0,0,0,0.2)', 
+                                    borderRadius: '6px',
+                                    padding: '5px'
+                                }}>
+                                    {waStatus.pendingMessages.map((msg, idx) => (
+                                        <div key={idx} style={{ 
+                                            padding: '6px', 
+                                            borderBottom: idx < waStatus.pendingMessages.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                            display: 'flex',
+                                            justifyContent: 'space-between'
+                                        }}>
+                                            <span>📞 {msg.to}</span>
+                                            <span style={{ opacity: 0.6 }}>{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', margin: 0 }}>
+                                    Sin mensajes en espera.
+                                </p>
+                            )}
+                        </div>
+                    </>
                 )}
 
                 {!waStatus?.isReady && waStatus?.qrUrl && (
