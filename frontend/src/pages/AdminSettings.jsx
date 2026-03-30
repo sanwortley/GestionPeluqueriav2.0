@@ -16,18 +16,41 @@ export default function AdminSettings() {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [pendingNotifs, setPendingNotifs] = useState([]);
 
+    const fetchPendingNotifs = async () => {
+        try {
+            const res = await api.get('whatsapp/pending-notifs?days=7');
+            setPendingNotifs(res.data);
+        } catch(e) {
+            console.error("Error fetching pending notifs", e);
+        }
+    };
+
     useEffect(() => {
         fetchWhatsAppStatus();
-        const interval = setInterval(fetchWhatsAppStatus, 10000); // Polling cada 10s
+        fetchPendingNotifs();
+        const interval = setInterval(() => {
+            fetchWhatsAppStatus();
+            fetchPendingNotifs();
+        }, 15000);
         return () => clearInterval(interval);
     }, []);
 
-    const fetchWhatsAppStatus = async () => {
+    const handleSendSingle = async (id) => {
         try {
-            const res = await api.get('whatsapp/status');
-            setWaStatus(res.data);
-        } catch (err) {
-            console.error("Error fetching WA status", err);
+            await api.post(`whatsapp/send-single/${id}`);
+            fetchPendingNotifs();
+        } catch(e) {
+            alert("Error al enviar notificación individual.");
+        }
+    };
+
+    const handleDismiss = async (id) => {
+        if (!window.confirm("¿Seguro que querés marcar este turno como notificado sin enviar mensaje?")) return;
+        try {
+            await api.post(`whatsapp/dismiss/${id}`);
+            fetchPendingNotifs();
+        } catch(e) {
+            alert("Error al descartar notificación.");
         }
     };
 
@@ -291,12 +314,13 @@ export default function AdminSettings() {
                             </div>
                         </div>
 
-                        {pendingNotifs.length > 0 && (
-                            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#FBBF24' }}>
-                                    ⚠️ Notificaciones Pendientes ({pendingNotifs.length})
-                                </h4>
-                                <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
+                        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#FBBF24' }}>
+                                Notificaciones de Registro/Confirmación Pendientes
+                            </h4>
+                            
+                            {pendingNotifs.length > 0 ? (
+                                <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.5rem', marginTop: '1rem' }}>
                                     <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
                                         <thead>
                                             <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -351,8 +375,12 @@ export default function AdminSettings() {
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <p style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginTop: '1rem' }}>
+                                    ✅ No hay notificaciones pendientes de envío. Todos los clientes recibieron su mensaje inicial.
+                                </p>
+                            )}
+                        </div>
                     </>
                 )}
             </div>
