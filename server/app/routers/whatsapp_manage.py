@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import httpx
 import logging
-from app.core.deps import get_current_admin
+from app.core.deps import get_current_admin, get_db
 from app.core.config import settings
-from app.db.session import get_db
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
