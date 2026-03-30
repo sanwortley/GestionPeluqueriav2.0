@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from datetime import datetime
 from fastapi import HTTPException
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.service import Service
