@@ -25,6 +25,15 @@ export default function AdminSettings() {
         }
     };
 
+    const fetchWhatsAppStatus = async () => {
+        try {
+            const res = await api.get('whatsapp/status');
+            setWaStatus(res.data);
+        } catch (err) {
+            console.error("Error fetching WA status", err);
+        }
+    };
+
     useEffect(() => {
         fetchWhatsAppStatus();
         fetchPendingNotifs();
