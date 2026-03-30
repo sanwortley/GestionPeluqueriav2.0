@@ -8,6 +8,11 @@ import logging
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+def normalize_phone_local(phone: str) -> str:
+    """Extrae los últimos 10 dígitos (local) para comparar sin importar prefijos ni el '9'."""
+    digits = "".join([c for c in phone if c.isdigit()])
+    return digits[-10:] if len(digits) >= 10 else digits
+
 @router.post("/ultramsg")
 async def ultramsg_webhook(request: Request, db: Session = Depends(get_db)):
     """
@@ -26,13 +31,15 @@ async def ultramsg_webhook(request: Request, db: Session = Depends(get_db)):
     if not body or not from_phone:
         return {"ok": True}
 
-    # Clean the phone number (remove @c.us and other symbols)
+    # Clean and normalize incoming phone
     clean_phone = from_phone.split("@")[0]
-    logger.info(f"Webhook recibido: Mensaje='{body}' desde {clean_phone}")
+    local_incoming = normalize_phone_local(clean_phone)
     
-    # Buscar turnos pendientes que hayan recibido una solicitud recientemente (últimas 48hs)
+    logger.info(f"🔵 [WEBHOOK] Recibido body='{body}' desde {clean_phone} (Local: {local_incoming})")
+    
+    # Buscar turnos pendientes que hayan recibido una solicitud recientemente (últimas 72hs para margen)
     from datetime import datetime, timedelta
-    limit_time = datetime.now() - timedelta(hours=48)
+    limit_time = datetime.now() - timedelta(hours=72)
     
     all_pending = db.query(Appointment).filter(
         Appointment.status == AppointmentStatus.PENDING,
@@ -41,22 +48,20 @@ async def ultramsg_webhook(request: Request, db: Session = Depends(get_db)):
     ).all()
     
     appt = None
+    pending_phones_for_log = []
+    
     for a in all_pending:
-        db_phone = a.client_phone.replace("+", "").replace(" ", "")
-        # Normalizar el teléfono de la DB para comparar
-        if db_phone.startswith("549"):
-            pass
-        elif db_phone.startswith("54"):
-            db_phone = "549" + db_phone[2:]
+        local_db = normalize_phone_local(a.client_phone)
+        pending_phones_for_log.append(f"ID:{a.id}({local_db})")
         
-        # Comparar si el teléfono coincide
-        if db_phone in clean_phone or clean_phone in db_phone:
+        # Comparación robusta por los últimos 10 dígitos
+        if local_db == local_incoming and local_incoming != "":
             appt = a
             break
-
+            
     if not appt:
-        logger.warning(f"No se encontró turno PENDING con recordatorio reciente para: {clean_phone}")
-        return {"ok": True, "detail": "No pending appointment with recent reminder found"}
+        logger.warning(f"⚠️ [WEBHOOK] No se encontró turno PENDING/Reciente para: {local_incoming}. Pendientes actuales: {pending_phones_for_log}")
+        return {"ok": True, "detail": "No matching appointment found"}
 
     if body == "1":
         # CONFIRM

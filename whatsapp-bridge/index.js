@@ -129,6 +129,7 @@ function createClient() {
             logToFile(`🎯 [RESPUESTA] Coincidencia con "${body}" desde ${from}`);
             try {
                 const url = `${BACKEND_URL}/api/webhooks/ultramsg`;
+                logToFile(`📤 Enviando webhook a: ${url}`);
                 const res = await axios.post(url, {
                     data: {
                         body: body,
