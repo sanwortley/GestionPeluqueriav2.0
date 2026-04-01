@@ -56,10 +56,7 @@ function createClient() {
             dataPath: sessionPath
         }),
         authTimeoutMs: 60000, 
-        webVersionCache: {
-            type: 'remote',
-            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1012133516-alpha.html'
-        },
+
         puppeteer: {
             headless: true,
             args: [
@@ -165,7 +162,16 @@ async function processQueue() {
 
         try {
             console.log(`[QUEUE] Procesando (${messageQueue.length} pendientes): ${to}`);
-            const chatId = `${to}@c.us`;
+            // Resolviendo JID adecuado (maneja migración LID y números no registrados)
+            console.log(`[QUEUE] Resolviendo JID para ${to}...`);
+            const numberDetails = await client.getNumberId(to);
+            
+            if (!numberDetails) {
+                throw new Error(`EL NÚMERO ${to} NO ESTÁ REGISTRADO EN WHATSAPP`);
+            }
+
+            const chatId = numberDetails._serialized;
+            console.log(`[QUEUE] JID Resuelta: ${chatId}. Enviando mensaje...`);
 
             // Safety timeout for the send operation
             const sendPromise = client.sendMessage(chatId, body);
