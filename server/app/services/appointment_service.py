@@ -95,10 +95,14 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
                   f"✅ *Tu turno ha sido registrado correctamente.*\n"
                   f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
     
-    if send_whatsapp_sync(appt.client_phone, client_msg):
-        # We assume it was triggered. We mark as notified.
+    appt.last_notified_at = datetime.now()
+    success, error = send_whatsapp_sync(appt.client_phone, client_msg)
+    if success:
         appt.notified_at = datetime.now()
-        db.commit()
+        appt.notification_error = None
+    else:
+        appt.notification_error = error
+    db.commit()
     
     return appt
 
@@ -145,9 +149,14 @@ def confirm_appointment(db: Session, id: int) -> Appointment:
     logger = logging.getLogger(__name__)
     logger.info(f"🔔 [CONFIRM] Iniciando notificación para {appt.client_phone} (Turno ID: {appt.id})")
     
-    if send_whatsapp_sync(appt.client_phone, msg):
+    appt.last_notified_at = datetime.now()
+    success, error = send_whatsapp_sync(appt.client_phone, msg)
+    if success:
         appt.notified_at = datetime.now()
-        db.commit()
+        appt.notification_error = None
+    else:
+        appt.notification_error = error
+    db.commit()
     
     return appt
 
@@ -248,15 +257,19 @@ def send_retro_notifications(db: Session, days_back: int = 4) -> int:
 
 def get_pending_notifications(db: Session, days_back: int = 7) -> list[Appointment]:
     """
-    Lists future PENDING or CONFIRMED appointments that haven't been notified yet.
+    Lists future PENDING or CONFIRMED appointments that haven't been notified yet or failed.
     """
     from datetime import timedelta
+    from sqlalchemy import or_
     now = datetime.now()
     today = now.date()
     start_created_at = now - timedelta(days=days_back)
     
     return db.query(Appointment).filter(
-        Appointment.notified_at.is_(None),
+        or_(
+            Appointment.notified_at.is_(None),
+            Appointment.notification_error.is_not(None)
+        ),
         Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED]),
         Appointment.date >= today,
         Appointment.created_at >= start_created_at
@@ -291,10 +304,16 @@ def send_single_notification(db: Session, appt_id: int) -> bool:
     else:
         return False
 
-    if send_whatsapp_sync(appt.client_phone, msg):
+    appt.last_notified_at = datetime.now()
+    success, error = send_whatsapp_sync(appt.client_phone, msg)
+    if success:
         appt.notified_at = datetime.now()
+        appt.notification_error = None
         db.commit()
         return True
+    
+    appt.notification_error = error
+    db.commit()
     return False
 
 def dismiss_notification(db: Session, appt_id: int) -> bool:

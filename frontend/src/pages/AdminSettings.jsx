@@ -360,6 +360,18 @@ export default function AdminSettings() {
                                                         }}>
                                                             {notif.status === 'CONFIRMED' ? 'CONFIRMADO' : 'PENDIENTE'}
                                                         </span>
+                                                        {notif.notification_error && (
+                                                            <div style={{ 
+                                                                marginTop: '4px', 
+                                                                color: '#EF4444', 
+                                                                fontSize: '0.6rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px'
+                                                            }}>
+                                                                ⚠️ {notif.notification_error}
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td style={{ padding: '0.5rem', whiteSpace: 'nowrap' }}>
                                                         <div style={{ display: 'flex', gap: '4px' }}>

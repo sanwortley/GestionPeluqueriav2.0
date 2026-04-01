@@ -78,6 +78,8 @@ async def get_pending_notifications_endpoint(days: int = 7, db: Session = Depend
         "start_time": a.start_time,
         "status": a.status,
         "created_at": a.created_at,
+        "notification_error": a.notification_error,
+        "last_notified_at": a.last_notified_at,
         "service_name": a.service.name if a.service else "N/A"
     } for a in appts]
 
