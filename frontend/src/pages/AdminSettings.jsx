@@ -15,6 +15,7 @@ export default function AdminSettings() {
     const [waStatus, setWaStatus] = useState(null);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [pendingNotifs, setPendingNotifs] = useState([]);
+    const [recentConfirmed, setRecentConfirmed] = useState([]);
 
     const fetchPendingNotifs = async () => {
         try {
@@ -22,6 +23,15 @@ export default function AdminSettings() {
             setPendingNotifs(res.data);
         } catch(e) {
             console.error("Error fetching pending notifs", e);
+        }
+    };
+
+    const fetchRecentConfirmed = async () => {
+        try {
+            const res = await api.get('whatsapp/recent-confirmed?days=3');
+            setRecentConfirmed(res.data);
+        } catch(e) {
+            console.error("Error fetching recent confirmed", e);
         }
     };
 
@@ -37,9 +47,11 @@ export default function AdminSettings() {
     useEffect(() => {
         fetchWhatsAppStatus();
         fetchPendingNotifs();
+        fetchRecentConfirmed();
         const interval = setInterval(() => {
             fetchWhatsAppStatus();
             fetchPendingNotifs();
+            fetchRecentConfirmed();
         }, 15000);
         return () => clearInterval(interval);
     }, []);
@@ -48,8 +60,21 @@ export default function AdminSettings() {
         try {
             await api.post(`whatsapp/send-single/${id}`);
             fetchPendingNotifs();
+            fetchRecentConfirmed();
         } catch(e) {
-            alert("Error al enviar notificación individual.");
+            alert("Error al enviar: " + (e.response?.data?.detail || e.message));
+        }
+    };
+
+    const handleResetAndSend = async (id, clientName) => {
+        if (!window.confirm(`¿Reenviar la notificación de confirmación a ${clientName}? Esto forzará un nuevo mensaje aunque ya haya sido enviado antes.`)) return;
+        try {
+            await api.post(`whatsapp/reset-and-send/${id}`);
+            alert(`✅ Mensaje enviado a ${clientName}`);
+            fetchPendingNotifs();
+            fetchRecentConfirmed();
+        } catch(e) {
+            alert("Error al reenviar: " + (e.response?.data?.detail || e.message));
         }
     };
 
@@ -399,6 +424,67 @@ export default function AdminSettings() {
                             ) : (
                                 <p style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginTop: '1rem' }}>
                                     ✅ No hay notificaciones pendientes de envío. Todos los clientes recibieron su mensaje inicial.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Sección Recuperación: Confirmados Recientes */}
+                        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#60A5FA' }}>
+                                🔁 Confirmados Recientes (Reenvío Manual)
+                            </h4>
+                            <p style={{ fontSize: '0.72rem', color: '#6B7280', margin: '0 0 1rem 0' }}>
+                                Turnos confirmados en los últimos 3 días. Usá el botón 🔁 para reenviar la notificación aunque ya haya sido enviada antes.
+                            </p>
+                            {recentConfirmed.length > 0 ? (
+                                <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
+                                    <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                                <th style={{ padding: '0.5rem' }}>Cliente</th>
+                                                <th style={{ padding: '0.5rem' }}>Fecha</th>
+                                                <th style={{ padding: '0.5rem' }}>Estado Envío</th>
+                                                <th style={{ padding: '0.5rem' }}>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {recentConfirmed.map(notif => (
+                                                <tr key={notif.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        <div style={{ fontWeight: 'bold' }}>{notif.client_name}</div>
+                                                        <div style={{ fontSize: '0.65rem', opacity: 0.7 }}>{notif.client_phone}</div>
+                                                    </td>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        {new Date(notif.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}
+                                                        <div style={{ fontSize: '0.65rem', opacity: 0.7 }}>{notif.start_time} hs</div>
+                                                    </td>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        {notif.notified_at ? (
+                                                            <span style={{ fontSize: '0.6rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.2)', color: '#10B981' }}>✅ Enviado</span>
+                                                        ) : (
+                                                            <span style={{ fontSize: '0.6rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239,68,68,0.2)', color: '#EF4444' }}>❌ Sin enviar</span>
+                                                        )}
+                                                        {notif.notification_error && (
+                                                            <div style={{ marginTop: '3px', color: '#EF4444', fontSize: '0.6rem' }}>⚠️ {notif.notification_error}</div>
+                                                        )}
+                                                    </td>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        <button
+                                                            title="Forzar reenvío"
+                                                            onClick={() => handleResetAndSend(notif.id, notif.client_name)}
+                                                            style={{ background: '#3B82F6', border: 'none', borderRadius: '4px', padding: '4px 10px', color: 'white', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                        >
+                                                            🔁 Reenviar
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic' }}>
+                                    Sin turnos confirmados en los últimos 3 días.
                                 </p>
                             )}
                         </div>

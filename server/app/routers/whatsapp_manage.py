@@ -49,10 +49,10 @@ async def test_send_whatsapp(phone: str, message: str):
     Manually send a test message to a specific number.
     """
     from app.services.whatsapp import send_whatsapp_sync
-    success = send_whatsapp_sync(phone, message)
+    success, error = send_whatsapp_sync(phone, message)
     if not success:
-        raise HTTPException(status_code=500, detail="Could not trigger message. Check bridge URL.")
-    return {"ok": True, "message": "Test message triggered in background"}
+        raise HTTPException(status_code=500, detail=f"Error: {error}")
+    return {"ok": True, "message": "Test message sent successfully"}
 
 @router.post("/retroactive-notify", dependencies=[Depends(get_current_admin)])
 async def trigger_retroactive_notifications(days: int = 4, db: Session = Depends(get_db)):
@@ -91,8 +91,59 @@ async def send_single_notification_endpoint(appt_id: int, db: Session = Depends(
     from app.services.appointment_service import send_single_notification
     success = send_single_notification(db, appt_id)
     if not success:
-        raise HTTPException(status_code=400, detail="Could not send notification. Appointment not found or already notified.")
+        raise HTTPException(status_code=400, detail="Could not send notification. Check bridge logs.")
     return {"ok": True}
+
+@router.post("/reset-and-send/{appt_id}", dependencies=[Depends(get_current_admin)])
+async def reset_and_send_notification(appt_id: int, db: Session = Depends(get_db)):
+    """
+    Resets notification status and force-sends regardless of previous notified_at.
+    Used to recover appointments that were wrongly marked as notified.
+    """
+    from app.models.appointment import Appointment
+    from app.services.appointment_service import send_single_notification
+    from datetime import datetime
+
+    appt = db.query(Appointment).filter(Appointment.id == appt_id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Clear notification state to force re-send
+    appt.notified_at = None
+    appt.notification_error = None
+    db.commit()
+    
+    success = send_single_notification(db, appt_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Notification reset but send failed. Check bridge.")
+    return {"ok": True, "message": "Notification reset and sent successfully"}
+
+@router.get("/recent-confirmed", dependencies=[Depends(get_current_admin)])
+async def get_recent_confirmed(days: int = 3, db: Session = Depends(get_db)):
+    """
+    Returns CONFIRMED appointments from the last N days regardless of notified_at.
+    Used to manually re-notify clients whose notification may have failed silently.
+    """
+    from app.models.appointment import Appointment, AppointmentStatus
+    from datetime import datetime, timedelta
+    cutoff = datetime.now() - timedelta(days=days)
+    today = datetime.now().date()
+    appts = db.query(Appointment).filter(
+        Appointment.status == AppointmentStatus.CONFIRMED,
+        Appointment.date >= today,
+        Appointment.created_at >= cutoff
+    ).order_by(Appointment.date.asc()).all()
+    return [{
+        "id": a.id,
+        "client_name": a.client_name,
+        "client_phone": a.client_phone,
+        "date": a.date,
+        "start_time": a.start_time,
+        "status": a.status,
+        "notified_at": a.notified_at,
+        "notification_error": getattr(a, 'notification_error', None),
+        "service_name": a.service.name if a.service else "N/A"
+    } for a in appts]
 
 @router.post("/dismiss/{appt_id}", dependencies=[Depends(get_current_admin)])
 async def dismiss_notification_endpoint(appt_id: int, db: Session = Depends(get_db)):
