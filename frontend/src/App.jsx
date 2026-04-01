@@ -7,6 +7,7 @@ import AdminBlocks from './pages/AdminBlocks';
 import AdminHistory from './pages/AdminHistory';
 import AdminClients from './pages/AdminClients';
 import AdminSettings from './pages/AdminSettings';
+import AdminMessaging from './pages/AdminMessaging';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
@@ -26,6 +27,7 @@ function App() {
             <Route path="/admin/blocks" element={<AdminBlocks />} />
             <Route path="/admin/history" element={<AdminHistory />} />
             <Route path="/admin/clients" element={<AdminClients />} />
+            <Route path="/admin/messaging" element={<AdminMessaging />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
           </Route>
         </Routes>
