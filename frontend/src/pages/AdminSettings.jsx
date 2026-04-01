@@ -431,10 +431,10 @@ export default function AdminSettings() {
                         {/* Sección Recuperación: Confirmados Recientes */}
                         <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                             <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#60A5FA' }}>
-                                🔁 Confirmados Recientes (Reenvío Manual)
+                                🔁 Turnos Recientes — Pendientes y Confirmados (Reenvío Manual)
                             </h4>
                             <p style={{ fontSize: '0.72rem', color: '#6B7280', margin: '0 0 1rem 0' }}>
-                                Turnos confirmados en los últimos 3 días. Usá el botón 🔁 para reenviar la notificación aunque ya haya sido enviada antes.
+                                Todos los turnos (PENDIENTES y CONFIRMADOS) de los últimos 3 días. Usá 🔁 para reenviar la notificación a cualquier cliente.
                             </p>
                             {recentConfirmed.length > 0 ? (
                                 <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
@@ -443,7 +443,8 @@ export default function AdminSettings() {
                                             <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                                                 <th style={{ padding: '0.5rem' }}>Cliente</th>
                                                 <th style={{ padding: '0.5rem' }}>Fecha</th>
-                                                <th style={{ padding: '0.5rem' }}>Estado Envío</th>
+                                                <th style={{ padding: '0.5rem' }}>Estado Turno</th>
+                                                <th style={{ padding: '0.5rem' }}>Envío WA</th>
                                                 <th style={{ padding: '0.5rem' }}>Acción</th>
                                             </tr>
                                         </thead>
@@ -457,6 +458,15 @@ export default function AdminSettings() {
                                                     <td style={{ padding: '0.5rem' }}>
                                                         {new Date(notif.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}
                                                         <div style={{ fontSize: '0.65rem', opacity: 0.7 }}>{notif.start_time} hs</div>
+                                                    </td>
+                                                    <td style={{ padding: '0.5rem' }}>
+                                                        <span style={{
+                                                            fontSize: '0.6rem', padding: '2px 6px', borderRadius: '4px',
+                                                            background: notif.status === 'CONFIRMED' ? 'rgba(16,185,129,0.2)' : 'rgba(234,179,8,0.2)',
+                                                            color: notif.status === 'CONFIRMED' ? '#10B981' : '#EAB308'
+                                                        }}>
+                                                            {notif.status === 'CONFIRMED' ? 'CONFIRMADO' : 'PENDIENTE'}
+                                                        </span>
                                                     </td>
                                                     <td style={{ padding: '0.5rem' }}>
                                                         {notif.notified_at ? (

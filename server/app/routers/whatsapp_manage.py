@@ -121,7 +121,7 @@ async def reset_and_send_notification(appt_id: int, db: Session = Depends(get_db
 @router.get("/recent-confirmed", dependencies=[Depends(get_current_admin)])
 async def get_recent_confirmed(days: int = 3, db: Session = Depends(get_db)):
     """
-    Returns CONFIRMED appointments from the last N days regardless of notified_at.
+    Returns CONFIRMED and PENDING appointments from the last N days regardless of notified_at.
     Used to manually re-notify clients whose notification may have failed silently.
     """
     from app.models.appointment import Appointment, AppointmentStatus
@@ -129,7 +129,7 @@ async def get_recent_confirmed(days: int = 3, db: Session = Depends(get_db)):
     cutoff = datetime.now() - timedelta(days=days)
     today = datetime.now().date()
     appts = db.query(Appointment).filter(
-        Appointment.status == AppointmentStatus.CONFIRMED,
+        Appointment.status.in_([AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING]),
         Appointment.date >= today,
         Appointment.created_at >= cutoff
     ).order_by(Appointment.date.asc()).all()
