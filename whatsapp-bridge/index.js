@@ -60,7 +60,7 @@ function createClient() {
         authTimeoutMs: 60000, 
 
         puppeteer: {
-            headless: true,
+            headless: 'new',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -69,6 +69,7 @@ function createClient() {
                 '--no-first-run',
                 '--no-zygote',
                 '--disable-gpu',
+                '--disable-software-rasterizer',
                 '--hide-scrollbars',
                 '--disable-notifications',
                 '--disable-background-networking',
@@ -142,7 +143,29 @@ function createClient() {
         }
     });
 
-    newClient.initialize();
+    // Initialization with retry logic to handle ProtocolErrors in containers
+    const startWithRetry = async (attempts = 3) => {
+        for (let i = 1; i <= attempts; i++) {
+            try {
+                logToFile(`🚀 Intento de inicialización ${i}/${attempts}...`);
+                await newClient.initialize();
+                return;
+            } catch (err) {
+                logToFile(`⚠️ Fallo en intento ${i}: ${err.message}`);
+                if (i === attempts) {
+                    logToFile('❌ No se pudo inicializar tras varios intentos.');
+                } else {
+                    const wait = i * 3000;
+                    logToFile(`⏳ Esperando ${wait/1000}s para reintentar...`);
+                    await new Promise(r => setTimeout(r, wait));
+                }
+            }
+        }
+    };
+
+    // Small delay before starting to ensure environment readiness
+    setTimeout(() => startWithRetry(), 5000);
+    
     return newClient;
 }
 
