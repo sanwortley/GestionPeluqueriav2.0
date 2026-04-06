@@ -33,7 +33,8 @@ function cleanupLocks(dir) {
         const files = fs.readdirSync(dir);
         for (const file of files) {
             const fullPath = path.join(dir, file);
-            if (file === 'SingletonLock' || file === 'SingletonCookie') {
+            const lockPatterns = ['SingletonLock', 'SingletonCookie', 'SingletonSocket', 'lockfile'];
+            if (lockPatterns.some(p => file.includes(p))) {
                 console.log(`🧹 Eliminando archivo de bloqueo ${file} para permitir el inicio...`);
                 try { fs.unlinkSync(fullPath); } catch(e) {}
             } else if (fs.lstatSync(fullPath).isDirectory()) {
@@ -146,7 +147,7 @@ function createClient() {
 }
 
 // Global client instance
-client = createClient();
+// (Client is already declared at the top and will be initialized at the bottom)
 
 // Redundant route removed (moved logic to the detailed one below)
 
