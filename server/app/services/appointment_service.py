@@ -255,6 +255,65 @@ def send_retro_notifications(db: Session, days_back: int = 4) -> int:
             count += 1
     return count
 
+def send_custom_notification(db: Session, appt_id: int, msg_type: str) -> tuple[bool, str]:
+    """
+    Sends a specific type of notification (NOTIFICAR, CONFIRMAR, RECORDAR) 
+    and updates the corresponding tracking field.
+    """
+    appt = db.query(Appointment).filter(Appointment.id == appt_id).first()
+    if not appt:
+        return False, "Appointment not found"
+    
+    service_name = appt.service.name if appt.service else "el servicio"
+    date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
+    
+    msg = ""
+    if msg_type == "NOTIFICAR":
+        msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
+               f"📅 Fecha: {date_formatted}\n"
+               f"🕒 Hora: {appt.start_time} hs\n"
+               f"✨ Servicio: {service_name}\n\n"
+               f"✅ *Tu turno ha sido registrado correctamente.*\n"
+               f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
+    elif msg_type == "CONFIRMAR":
+        msg = (f"👋 Hola {appt.client_name}\n\n"
+               f"Confirmación de tu turno en *Roma Cabello*:\n"
+               f"📅 *{date_formatted}*\n"
+               f"⏰ *{appt.start_time} hs*\n"
+               f"💇‍♀️ {service_name}\n\n"
+               f"⚠️ Respondé con un 1 para confirmar o un 2 para cancelar.")
+    elif msg_type == "RECORDAR":
+        msg = (f"👋 ¡Hola {appt.client_name}!\n\n"
+               f"Te recordamos tu turno hoy en *Roma Cabello*:\n"
+               f"📅 *{date_formatted}*\n"
+               f"⏰ *{appt.start_time} hs*\n"
+               f"💇‍♀️ {service_name}\n\n"
+               f"¡Te esperamos!")
+    else:
+        return False, f"Invalid message type: {msg_type}"
+
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"🔔 [CUSTOM] Enviando {msg_type} para {appt.client_phone} (Turno ID: {appt.id})")
+
+    appt.last_notified_at = datetime.now()
+    success, error = send_whatsapp_sync(appt.client_phone, msg)
+    
+    if success:
+        if msg_type == "NOTIFICAR":
+            appt.notified_at = datetime.now()
+        elif msg_type == "CONFIRMAR":
+            appt.confirmation_sent_at = datetime.now()
+        elif msg_type == "RECORDAR":
+            appt.reminder_sent_at = datetime.now()
+        
+        appt.notification_error = None
+    else:
+        appt.notification_error = error
+    
+    db.commit()
+    return success, error
+
 def get_pending_notifications(db: Session, days_back: int = 7) -> list[Appointment]:
     """
     Lists future PENDING or CONFIRMED appointments that haven't been notified yet or failed.

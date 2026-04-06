@@ -16,15 +16,16 @@ async def get_whatsapp_status():
     if not settings.WHATSAPP_BRIDGE_URL:
         raise HTTPException(status_code=503, detail="WhatsApp bridge URL not configured")
     
+    qr_url = f"{settings.WHATSAPP_BRIDGE_URL}/qr"
     try:
         async with httpx.AsyncClient() as client:
             res = await client.get(f"{settings.WHATSAPP_BRIDGE_URL}/status", timeout=5.0)
             data = res.json()
-            data["qrUrl"] = f"{settings.WHATSAPP_BRIDGE_URL}/qr"
+            data["qrUrl"] = qr_url
             return data
     except Exception as e:
         logger.error(f"Error checking bridge status: {str(e)}")
-        return {"isReady": False, "error": str(e)}
+        return {"isReady": False, "error": str(e), "qrUrl": qr_url}
 
 @router.post("/logout", dependencies=[Depends(get_current_admin)])
 async def logout_whatsapp():
@@ -78,6 +79,9 @@ async def get_pending_notifications_endpoint(days: int = 7, db: Session = Depend
         "start_time": a.start_time,
         "status": a.status,
         "created_at": a.created_at,
+        "notified_at": a.notified_at,
+        "confirmation_sent_at": getattr(a, 'confirmation_sent_at', None),
+        "reminder_sent_at": getattr(a, 'reminder_sent_at', None),
         "notification_error": a.notification_error,
         "last_notified_at": a.last_notified_at,
         "service_name": a.service.name if a.service else "N/A"
@@ -125,14 +129,13 @@ async def get_recent_confirmed(days: int = 3, db: Session = Depends(get_db)):
     Used to manually re-notify clients whose notification may have failed silently.
     """
     from app.models.appointment import Appointment, AppointmentStatus
-    from datetime import datetime, timedelta
-    cutoff = datetime.now() - timedelta(days=days)
-    today = datetime.now().date()
+    from datetime import date
+    # Filter: From today onwards (all types of appointments in that range)
+    today = date.today()
     appts = db.query(Appointment).filter(
-        Appointment.status.in_([AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING]),
         Appointment.date >= today,
-        Appointment.created_at >= cutoff
-    ).order_by(Appointment.date.asc()).all()
+        Appointment.status.in_([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED])
+    ).order_by(Appointment.date.asc(), Appointment.start_time.asc()).all()
     return [{
         "id": a.id,
         "client_name": a.client_name,
@@ -141,9 +144,22 @@ async def get_recent_confirmed(days: int = 3, db: Session = Depends(get_db)):
         "start_time": a.start_time,
         "status": a.status,
         "notified_at": a.notified_at,
+        "confirmation_sent_at": getattr(a, 'confirmation_sent_at', None),
+        "reminder_sent_at": getattr(a, 'reminder_sent_at', None),
         "notification_error": getattr(a, 'notification_error', None),
         "service_name": a.service.name if a.service else "N/A"
     } for a in appts]
+
+@router.post("/send-custom/{appt_id}", dependencies=[Depends(get_current_admin)])
+async def send_custom_notification_endpoint(appt_id: int, type: str, db: Session = Depends(get_db)):
+    """
+    Sends a specific message type (NOTIFICAR, CONFIRMAR, RECORDAR) manually.
+    """
+    from app.services.appointment_service import send_custom_notification
+    success, error = send_custom_notification(db, appt_id, type)
+    if not success:
+        return {"ok": False, "error": error}
+    return {"ok": True}
 
 @router.post("/dismiss/{appt_id}", dependencies=[Depends(get_current_admin)])
 async def dismiss_notification_endpoint(appt_id: int, db: Session = Depends(get_db)):

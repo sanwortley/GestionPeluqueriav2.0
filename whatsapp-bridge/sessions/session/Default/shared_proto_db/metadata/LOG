@@ -1,3 +1,2 @@
-2026/03/26-10:12:25.017 614 Reusing MANIFEST C:\RomaCabello\whatsapp-bridge\sessions\session\Default\shared_proto_db\metadata/MANIFEST-000001
-2026/03/26-10:12:25.018 614 Recovering log #3
-2026/03/26-10:12:25.019 614 Reusing old log C:\RomaCabello\whatsapp-bridge\sessions\session\Default\shared_proto_db\metadata/000003.log 
+2026/04/06-09:28:02.511 64e0 Creating DB C:\RomaCabello\whatsapp-bridge\sessions\session\Default\shared_proto_db\metadata since it was missing.
+2026/04/06-09:28:02.524 64e0 Reusing MANIFEST C:\RomaCabello\whatsapp-bridge\sessions\session\Default\shared_proto_db\metadata/MANIFEST-000001

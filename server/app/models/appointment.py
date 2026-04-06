@@ -33,6 +33,7 @@ class Appointment(Base):
     
     # Tracking para confirmaciones
     confirmation_sent_at = Column(DateTime(timezone=True), nullable=True)  # Cuando se envió la solicitud de confirmación
+    reminder_sent_at = Column(DateTime(timezone=True), nullable=True)      # Cuando se envió el recordatorio de cortesía
     notified_at = Column(DateTime(timezone=True), nullable=True)           # Cuando se envió el registro o confirmación manual con éxito
     notification_error = Column(String, nullable=True)                     # Error de la última notificación fallida
     last_notified_at = Column(DateTime(timezone=True), nullable=True)      # Fecha del último intento (éxito o fallo)

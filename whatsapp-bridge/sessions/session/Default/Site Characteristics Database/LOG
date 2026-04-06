@@ -1,3 +1,2 @@
-2026/03/26-10:12:24.814 2948 Reusing MANIFEST C:\RomaCabello\whatsapp-bridge\sessions\session\Default\Site Characteristics Database/MANIFEST-000001
-2026/03/26-10:12:24.818 2948 Recovering log #3
-2026/03/26-10:12:24.819 2948 Reusing old log C:\RomaCabello\whatsapp-bridge\sessions\session\Default\Site Characteristics Database/000003.log 
+2026/04/06-09:28:02.424 64e0 Creating DB C:\RomaCabello\whatsapp-bridge\sessions\session\Default\Site Characteristics Database since it was missing.
+2026/04/06-09:28:02.437 64e0 Reusing MANIFEST C:\RomaCabello\whatsapp-bridge\sessions\session\Default\Site Characteristics Database/MANIFEST-000001

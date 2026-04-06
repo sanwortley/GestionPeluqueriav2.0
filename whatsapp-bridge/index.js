@@ -22,6 +22,7 @@ const PORT = process.env.PORT || 3001;
 const BACKEND_URL = process.env.BACKEND_WEBSITE_URL || 'http://127.0.0.1:8001'; // API to notify about incoming messages
 logToFile(`📡 [CONFIG] Backend URL set to: ${BACKEND_URL}`);
 let isReady = false;
+let latestQR = null;
 
 let client;
 
@@ -324,6 +325,9 @@ app.post('/logout', async (req, res) => {
         console.error('Error al cerrar sesión:', error);
     }
 });
+
+// Initial startup
+client = createClient();
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Bridge OK en puerto ${PORT}`);

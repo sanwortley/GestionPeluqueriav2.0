@@ -98,9 +98,13 @@ def check_confirmations_v2():
                     sent_ok = send_whatsapp_sync(row.client_phone, msg)
                     
                     if sent_ok:
-                        db.query(Appointment).filter(Appointment.id == aid).update({
-                            "confirmation_sent_at": datetime.now()
-                        })
+                        update_fields = {}
+                        if row.status == AppointmentStatus.PENDING:
+                            update_fields["confirmation_sent_at"] = datetime.now()
+                        else:
+                            update_fields["reminder_sent_at"] = datetime.now()
+                            
+                        db.query(Appointment).filter(Appointment.id == aid).update(update_fields)
                         db.commit()
                         logger.info(f"  > EXITOSO ✅")
                     else:
