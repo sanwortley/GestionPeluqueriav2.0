@@ -88,7 +88,7 @@ def check_confirmations_v2():
                     else:
                         # Simple Reminder for already CONFIRMED
                         msg = (f"👋 ¡Hola {row.client_name}!\n\n"
-                               f"Te recordamos tu turno hoy en *Roma Cabello*:\n"
+                               f"Te recordamos tu turno en *Roma Cabello*:\n"
                                f"📅 *{date_formatted}*\n"
                                f"⏰ *{row.start_time} hs*\n"
                                f"💇‍♀️ {service_name}\n\n"

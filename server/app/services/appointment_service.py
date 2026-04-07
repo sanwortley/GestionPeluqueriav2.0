@@ -284,7 +284,7 @@ def send_custom_notification(db: Session, appt_id: int, msg_type: str) -> tuple[
                f"⚠️ Respondé con un 1 para confirmar o un 2 para cancelar.")
     elif msg_type == "RECORDAR":
         msg = (f"👋 ¡Hola {appt.client_name}!\n\n"
-               f"Te recordamos tu turno hoy en *Roma Cabello*:\n"
+               f"Te recordamos tu turno en *Roma Cabello*:\n"
                f"📅 *{date_formatted}*\n"
                f"⏰ *{appt.start_time} hs*\n"
                f"💇‍♀️ {service_name}\n\n"
