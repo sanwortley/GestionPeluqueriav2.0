@@ -95,7 +95,7 @@ def check_confirmations_v2():
                                f"¡Te esperamos!")
                     
                     logger.info(f"  > Intentando enviar WhatsApp a {row.client_phone}...")
-                    sent_ok = send_whatsapp_sync(row.client_phone, msg)
+                    sent_ok, error = send_whatsapp_sync(row.client_phone, msg)
                     
                     if sent_ok:
                         update_fields = {}
@@ -121,8 +121,9 @@ def check_confirmations_v2():
 
 def start_scheduler():
     if not scheduler.get_jobs():
-        # Usamos next_run_time=datetime.now() para que la primera ejecución sea inmediata
-        # pero gestionada por el scheduler, evitando doble ejecución manual.
+        # Mensajería automática desactivada a petición del usuario.
+        # Los recordatorios y confirmaciones ahora son manuales desde el panel.
+        """
         scheduler.add_job(
             check_confirmations_v2, 
             trigger=IntervalTrigger(minutes=1), 
@@ -130,4 +131,5 @@ def start_scheduler():
             replace_existing=True,
             next_run_time=datetime.now()
         )
+        """
         scheduler.start()

@@ -77,7 +77,7 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
     db.commit()
     db.refresh(appt)
     
-    # Notify Admin (Telegram) - First to avoid delays if WhatsApp bridge is down
+    # Notify Admin (Telegram) - Keep admin informed of new bookings
     admin_msg = (f"<b>🚨 ¡NUEVA SOLICITUD DE TURNO! 🚨</b>\n\n"
                  f"👤 <b>Cliente:</b> {appt.client_name}\n"
                  f"📞 <b>Tel:</b> {appt.client_phone}\n"
@@ -85,24 +85,6 @@ def create_appointment(db: Session, appt_in: AppointmentCreate) -> Appointment:
                  f"🕒 <b>Hora:</b> {appt.start_time}\n"
                  f"✨ <b>Servicio:</b> {service.name}")
     send_telegram_sync(admin_msg)
-
-    # Notify Client (Request Received)
-    date_formatted = appt.date.strftime("%d/%m") if hasattr(appt.date, 'strftime') else str(appt.date)
-    client_msg = (f"¡Hola {appt.client_name}! 💇‍♀️ Reservaste un turno en Roma Cabello:\n"
-                  f"📅 Fecha: {date_formatted}\n"
-                  f"🕒 Hora: {appt.start_time} hs\n"
-                  f"✨ Servicio: {service.name}\n\n"
-                  f"✅ *Tu turno ha sido registrado correctamente.*\n"
-                  f"Te enviaremos un mensaje más cerca de la fecha para confirmar tu asistencia.")
-    
-    appt.last_notified_at = datetime.now()
-    success, error = send_whatsapp_sync(appt.client_phone, client_msg)
-    if success:
-        appt.notified_at = datetime.now()
-        appt.notification_error = None
-    else:
-        appt.notification_error = error
-    db.commit()
     
     return appt
 
