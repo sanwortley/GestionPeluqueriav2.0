@@ -8,9 +8,24 @@ const fs = require('fs');
 const path = require('path');
 
 const LOG_FILE = path.join(__dirname, 'bridge.log');
+const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB limit for log file
+
 function logToFile(msg) {
     const time = new Date().toISOString();
-    fs.appendFileSync(LOG_FILE, `[${time}] ${msg}\n`);
+    const logEntry = `[${time}] ${msg}\n`;
+    
+    try {
+        // Log rotation: if file > 5MB, start fresh to save space
+        if (fs.existsSync(LOG_FILE)) {
+            const stats = fs.statSync(LOG_FILE);
+            if (stats.size > MAX_LOG_SIZE) {
+                fs.writeFileSync(LOG_FILE, `[${time}] --- LOG ROTATED (Size limit exceeded) ---\n`);
+            }
+        }
+        fs.appendFileSync(LOG_FILE, logEntry);
+    } catch (e) {
+        console.error('Failed to write to log file', e.message);
+    }
     console.log(msg);
 }
 
@@ -26,19 +41,35 @@ let latestQR = null;
 
 let client;
 
-// Function to clean up stale Chrome lock files that prevent startup in Railway/Docker
-function cleanupLocks(dir) {
+// Function to clean up stale Chrome lock files and massive cache folders
+function cleanupSpace(dir) {
     if (!fs.existsSync(dir)) return;
     try {
         const files = fs.readdirSync(dir);
         for (const file of files) {
             const fullPath = path.join(dir, file);
+            const isDir = fs.lstatSync(fullPath).isDirectory();
+
+            // 1. Cleanup Locks (Prevent startup errors)
             const lockPatterns = ['SingletonLock', 'SingletonCookie', 'SingletonSocket', 'lockfile'];
             if (lockPatterns.some(p => file.includes(p))) {
-                console.log(`🧹 Eliminando archivo de bloqueo ${file} para permitir el inicio...`);
+                console.log(`🧹 Eliminando archivo de bloqueo ${file}...`);
                 try { fs.unlinkSync(fullPath); } catch(e) {}
-            } else if (fs.lstatSync(fullPath).isDirectory()) {
-                cleanupLocks(fullPath);
+                continue;
+            }
+
+            // 2. Cleanup Cache (Save space)
+            // These folders grow indefinitely and aren't strictly needed for the session to persist
+            const cacheFolders = ['Cache', 'Code Cache', 'GPUCache', 'CacheStorage', 'ScriptCache', 'logs'];
+            if (isDir && cacheFolders.includes(file)) {
+                console.log(`♻️ Liberando espacio en carpeta de caché: ${file}`);
+                try { fs.rmSync(fullPath, { recursive: true, force: true }); } catch(e) {}
+                continue;
+            }
+
+            // 3. Recursive cleanup for subdirectories (like Default/Cache)
+            if (isDir) {
+                cleanupSpace(fullPath);
             }
         }
     } catch (err) {
@@ -49,9 +80,9 @@ function cleanupLocks(dir) {
 function createClient() {
     console.log('🚀 Inicializando nuevo cliente de WhatsApp...');
     
-    // Clean locks in sessions volume before starting
+    // Clean locks and cache in sessions volume before starting
     const sessionPath = path.join(__dirname, 'sessions');
-    cleanupLocks(sessionPath);
+    cleanupSpace(sessionPath);
 
     const newClient = new Client({
         authStrategy: new LocalAuth({
