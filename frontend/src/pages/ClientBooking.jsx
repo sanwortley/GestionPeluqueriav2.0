@@ -184,14 +184,14 @@ export default function ClientBooking() {
             const message = 
                 `💈 *ROMA CABELLO - RESERVA* 💈\n` +
                 `---------------------------------------\n\n` +
-                `✅ *¡TURNO CONFIRMADO!*\n\n` +
+                `⏳ *TURNO PEDIDO (PENDIENTE)*\n\n` +
                 `👤 *Cliente:* ${clientName}\n` +
                 `✂️ *Servicio:* ${selectedService.name}\n` +
                 `📅 *Fecha:* ${appointmentDate}\n` +
                 `⏰ *Hora:* ${selectedSlot.start_time} hs\n\n` +
                 `---------------------------------------\n` +
-                `_Enviado desde el sistema de reservas_\n` +
-                `_¡Nos vemos pronto en la barbería!_ ✂️🔥`;
+                `_A la espera de la confirmación del barbero._\n` +
+                `_¡Nos vemos pronto!_ ✂️🔥`;
             
             const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5493515427973';
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
