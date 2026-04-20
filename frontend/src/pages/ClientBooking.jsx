@@ -183,7 +183,7 @@ export default function ClientBooking() {
             const appointmentDate = format(selectedDate, 'dd/MM/yyyy');
             const message = `¡Hola! Reservé un turno en Roma Cabello:\n\n📅 *Fecha:* ${appointmentDate}\n⏰ *Hora:* ${selectedSlot.start_time} hs\n✂️ *Servicio:* ${selectedService.name}\n👤 *Nombre:* ${clientName}\n\n¡Nos vemos pronto!`;
             
-            const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5493517552167';
+            const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5493515427973';
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 
             // Resetear estado
