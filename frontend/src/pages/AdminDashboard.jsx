@@ -51,20 +51,14 @@ export default function AdminDashboard() {
                 isBlock: false
             }));
 
-            const blockEvents = [];
-            blocksRes.data.forEach(block => {
-                // If it's a multi-day block, we show it on each day or as one long block
-                // For simplicity and clarity in month view, let's treat it as one event per day if needed, 
-                // but Big Calendar handles multi-day well if start/end are set dates.
-                blockEvents.push({
-                    id: `block-${block.id}`,
-                    title: `BLOQUEO: ${block.reason || 'S/M'}`,
-                    start: new Date(block.start_date + 'T' + block.start_time),
-                    end: new Date(block.end_date + 'T' + block.end_time),
-                    resource: block,
-                    isBlock: true
-                });
-            });
+            const blockEvents = blocksRes.data.map(block => ({
+                id: `block-${block.id}`,
+                title: `BLOQUEO: ${block.reason || 'S/M'}`,
+                start: new Date(block.start_date + 'T' + block.start_time),
+                end: new Date(block.end_date + 'T' + block.end_time),
+                resource: block,
+                isBlock: true
+            }));
 
             setAppointments([...apptEvents, ...blockEvents]);
             setBlocks(blocksRes.data);
@@ -104,13 +98,11 @@ export default function AdminDashboard() {
             setSlotSize(av.slot_size_min);
             setRanges(av.ranges.sort((a, b) => a.start_time.localeCompare(b.start_time)));
         } else {
-            // New days start disabled and empty as per clean cleanup request
             setEnabled(false);
             setSlotSize(30);
             setRanges([]);
         }
 
-        // Auto-scroll on mobile to the detail section
         if (window.innerWidth < 992) {
             const detailElement = document.getElementById('day-detail');
             if (detailElement) {
@@ -123,7 +115,6 @@ export default function AdminDashboard() {
         const dateStr = format(date, 'yyyy-MM-dd');
         const dayEvents = allEvents.filter(e => {
             if (e.isBlock) {
-                // Check if date is within block range
                 const startStr = format(e.start, 'yyyy-MM-dd');
                 const endStr = format(e.end, 'yyyy-MM-dd');
                 return dateStr >= startStr && dateStr <= endStr;
@@ -139,45 +130,38 @@ export default function AdminDashboard() {
         try {
             await api.delete(`blocks/${id}`);
             alert('Bloqueo eliminado');
-            fetchAllData(); // Refresh everything
+            fetchAllData();
         } catch (err) {
-            alert('Error al eliminar bloqueo: ' + (err.response?.data?.detail || err.response?.data?.message || err.message));
-            console.error(err);
+            alert('Error al eliminar bloqueo');
         }
     };
 
     const handleDeleteAppointment = async (id) => {
-        if (!confirm('¿Estás seguro de que deseas ELIMINAR este turno permanentemente? Esta acción no se puede deshacer.')) return;
-        
-        // Optimistic UI Update: remove from local state immediately
-        const previousAppts = [...appointments];
-        const previousDayAppts = [...dayAppointments];
-        
-        setAppointments(appointments.filter(a => a.id !== `appt-${id}`));
-        setDayAppointments(dayAppointments.filter(e => e.id !== `appt-${id}`));
-        
+        if (!confirm('¿Estás seguro de que deseas ELIMINAR este turno?')) return;
         try {
             await api.delete(`appointments/${id}`);
-            // Alert is optional now for speed, but let's keep it discrete or remove it
-            // alert('Turno eliminado correctamente');
-            // We don't need to fetchAllData if we trust the deletion, but let's do it to keep sync
-             fetchAllData(); 
+            alert('Turno eliminado');
+            fetchAllData(); 
         } catch (err) {
-            // Rollback on error
-            setAppointments(previousAppts);
-            setDayAppointments(previousDayAppts);
-            alert('Error al eliminar el turno: ' + (err.response?.data?.detail || err.response?.data?.message || err.message));
-            console.error(err);
+            alert('Error al eliminar el turno');
+        }
+    };
+
+    const handleSendCustomMessage = async (id, type) => {
+        try {
+            const res = await api.post(`whatsapp/send-custom/${id}?type=${type}`);
+            if (res.data.ok) {
+                alert('Mensaje enviado correctamente');
+            } else {
+                alert('Error al enviar mensaje');
+            }
+        } catch (err) {
+            alert('Error al conectar con el servidor');
         }
     };
 
     const handleUpdateStatus = async (id, status) => {
         try {
-            // Since we don't have a direct "update status" endpoint in the original spec separate from logic, 
-            // we use cancel for cancellation. For "Completing" or "No Show" we might need to add logic if strictly required by backend.
-            // But user asked to "cancelar".
-            // The prompt spec lists: PUT /api/appointments/{id}/cancel
-
             if (status === 'CANCELLED') {
                 if (!confirm('¿Seguro que deseas cancelar este turno?')) return;
                 await api.put(`appointments/${id}/cancel`);
@@ -194,7 +178,6 @@ export default function AdminDashboard() {
             fetchAllData();
         } catch (err) {
             alert('Error al actualizar turno');
-            console.error(err);
         }
     };
 
@@ -209,7 +192,6 @@ export default function AdminDashboard() {
                 staff_id: null
             });
             alert('Disponibilidad actualizada');
-            // Refresh map
             fetchAvailabilityMonth(currentDate);
         } catch (err) {
             alert('Error al guardar');
@@ -236,24 +218,20 @@ export default function AdminDashboard() {
         const av = availabilityMap[dateStr];
         const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateStr;
 
-        // Check if date is within any block
         const isBlocked = blocks.some(b =>
             dateStr >= b.start_date && dateStr <= b.end_date
         );
 
         let style = {};
-        if (isSelected) {
-            style.border = '2px solid var(--primary)';
-        }
+        if (isSelected) style.border = '2px solid var(--primary)';
 
         if (isBlocked) {
             style = { ...style, backgroundColor: 'rgba(239, 68, 68, 0.4)', border: '1px solid var(--danger)' };
-            if (isSelected) style.border = '3px solid var(--primary)';
         } else if (av) {
             if (!av.enabled) {
-                style = { backgroundColor: 'rgba(239, 68, 68, 0.2)' }; // Red-ish for disabled
+                style = { backgroundColor: 'rgba(239, 68, 68, 0.2)' }; 
             } else {
-                style = { backgroundColor: 'rgba(16, 185, 129, 0.2)' }; // Green for custom schedule
+                style = { backgroundColor: 'rgba(16, 185, 129, 0.2)' }; 
             }
         }
         return { style };
@@ -283,8 +261,6 @@ export default function AdminDashboard() {
                         endAccessor="end"
                         selectable
                         onSelectSlot={handleSelectSlot}
-                        longPressThreshold={1}
-                        onDrillDown={(date) => handleSelectSlot({ start: date })}
                         onSelectEvent={(e) => {
                             handleSelectSlot({ start: e.start });
                             if (view === 'month') setView('day');
@@ -316,11 +292,6 @@ export default function AdminDashboard() {
                         }}
                     />
                 </div>
-                <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><div style={{ width: 10, height: 10, backgroundColor: 'rgba(16, 185, 129, 0.2)' }}></div> Horario Personalizado</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><div style={{ width: 10, height: 10, backgroundColor: 'rgba(239, 68, 68, 0.2)' }}></div> Cerrado</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><div style={{ width: 10, height: 10, border: '1px solid #333', opacity: 0.5 }}></div> Sin Configurar (Cerrado)</span>
-                </div>
             </div>
 
             <div style={{ flex: 1 }} className="card" id="day-detail">
@@ -328,23 +299,9 @@ export default function AdminDashboard() {
                 {selectedDate ? (
                     <div>
                         <h3>{format(selectedDate, 'dd/MM/yyyy')}</h3>
-
-                        {/* If day is blocked, show a message and hide the availability editor */}
                         {dayAppointments.some(e => e.isBlock) ? (
-                            <div style={{
-                                padding: '1rem',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: '1px solid var(--danger)',
-                                borderRadius: '4px',
-                                marginBottom: '2rem',
-                                color: 'var(--danger)',
-                                fontWeight: 'bold',
-                                textAlign: 'center'
-                            }}>
-                                ESTE DÍA TIENE UN BLOQUEO ACTIVO.<br />
-                                <span style={{ fontSize: '0.8rem', fontWeight: 'normal', opacity: 0.8 }}>
-                                    Elimina el bloqueo para poder editar la disponibilidad.
-                                </span>
+                            <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', borderRadius: '4px', marginBottom: '2rem', color: 'var(--danger)', textAlign: 'center' }}>
+                                ESTE DÍA TIENE UN BLOQUEO ACTIVO.
                             </div>
                         ) : (
                             <div style={{ marginBottom: '2rem' }}>
@@ -355,189 +312,82 @@ export default function AdminDashboard() {
                                         Habilitado
                                     </label>
                                 </div>
-
                                 {enabled && (
                                     <>
                                         <div className="form-group" style={{ marginBottom: '1rem' }}>
                                             <label className="label">Tamaño de Slot (min)</label>
                                             <input type="number" className="input" value={slotSize} onChange={e => setSlotSize(e.target.value)} />
                                         </div>
-
                                         <div className="form-group">
-                                            <label className="label">Rangos (Desde - Hasta)</label>
+                                            <label className="label">Rangos</label>
                                             {ranges.map((r, i) => (
                                                 <div key={i} className="flex gap-2 items-center range-row" style={{ marginBottom: '0.5rem' }}>
                                                     <input type="time" className="input" value={r.start_time} onChange={e => handleRangeChange(i, 'start_time', e.target.value)} />
                                                     <span>-</span>
                                                     <input type="time" className="input" value={r.end_time} onChange={e => handleRangeChange(i, 'end_time', e.target.value)} />
-                                                    <button onClick={() => removeRange(i)} className="btn btn-danger btn-sm" style={{ padding: '0.2rem 0.5rem' }}>✕</button>
+                                                    <button onClick={() => removeRange(i)} className="btn btn-danger btn-sm">✕</button>
                                                 </div>
                                             ))}
-                                            <button onClick={addRange} className="btn btn-secondary btn-sm" style={{ marginTop: '0.5rem', width: '100%' }}>+ Agregar Rango</button>
+                                            <button onClick={addRange} className="btn btn-secondary btn-sm" style={{ width: '100%' }}>+ Agregar Rango</button>
                                         </div>
                                     </>
                                 )}
-
-                                <button onClick={handleSaveAvailability} className="btn btn-primary w-full" style={{ marginTop: '1.5rem' }}>
-                                    GUARDAR CONFIGURACIÓN
-                                </button>
+                                <button onClick={handleSaveAvailability} className="btn btn-primary w-full" style={{ marginTop: '1.5rem' }}>GUARDAR CONFIGURACIÓN</button>
                             </div>
                         )}
 
                         <div style={{ marginBottom: '2rem' }}>
                             <h4 className="title" style={{ fontSize: '1.2rem', marginBottom: '1rem', textAlign: 'left' }}>Turnos y Bloqueos</h4>
                             {dayAppointments.length === 0 && <p className="text-muted">No hay actividad para este día.</p>}
-                            {/* Desktop View: Table */}
+                            
                             <div className="desktop-only">
-                                <table style={{ width: '100%', marginTop: '0' }}>
+                                <table style={{ width: '100%' }}>
                                     <thead>
                                         <tr>
-                                            <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'left', width: '60px' }}>Hora</th>
-                                            <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'left' }}>Cliente / Servicio</th>
-                                            <th style={{ padding: '0.8rem 0.5rem', fontSize: '0.9rem', textAlign: 'center', width: '140px' }}>Acciones</th>
+                                            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Hora</th>
+                                            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Cliente</th>
+                                            <th style={{ textAlign: 'center', padding: '0.5rem' }}>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {dayAppointments.map(e => (
                                             <tr key={e.id}>
-                                                <td style={{ verticalAlign: 'top', width: '80px' }}>
-                                                    <strong style={{ color: e.isBlock ? 'var(--danger)' : 'var(--primary)', fontSize: '1.1rem' }}>
+                                                <td style={{ padding: '0.5rem' }}>
+                                                    <strong style={{ color: e.isBlock ? 'var(--danger)' : 'var(--primary)' }}>
                                                         {e.isBlock ? e.resource.start_time : format(e.start, 'HH:mm')}
                                                     </strong>
                                                 </td>
-                                                <td>
+                                                <td style={{ padding: '0.5rem' }}>
                                                     {e.isBlock ? (
-                                                        <div>
-                                                            <div style={{ fontWeight: 'bold', color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '1px' }}>BLOQUEO</div>
-                                                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{e.resource.reason || 'Sin motivo'}</div>
-                                                        </div>
+                                                        <div style={{ color: 'var(--danger)' }}>BLOQUEO: {e.resource.reason}</div>
                                                     ) : (
                                                         <div>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '1rem' }}>
-                                                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', lineHeight: '1.2' }}>{e.resource.client_name}</span>
-                                                                <span style={{
-                                                                    fontSize: '0.6rem',
-                                                                    padding: '3px 8px',
-                                                                    borderRadius: '12px',
-                                                                    background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
-                                                                        (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
-                                                                            (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
-                                                                    color: e.resource.status === 'CONFIRMED' ? '#34D399' :
-                                                                        (e.resource.status === 'FINISHED' ? '#60A5FA' :
-                                                                            (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
-                                                                    fontWeight: 'bold',
-                                                                    textTransform: 'uppercase',
-                                                                    border: '1px solid currentColor',
-                                                                    whiteSpace: 'nowrap',
-                                                                    flexShrink: 0
-                                                                }}>
-                                                                    {e.resource.status === 'CONFIRMED' ? 'CONFIRMADO' :
-                                                                        e.resource.status === 'FINISHED' ? 'FINALIZADO' :
-                                                                            e.resource.status === 'PENDING' ? 'PENDIENTE' : 'CANCELADO'}
-                                                                </span>
-                                                            </div>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', color: '#aaa' }}>
-                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                    <i className="fas fa-cut" style={{ width: '16px', textAlign: 'center' }}></i> {e.resource.service?.name}
-                                                                </span>
-                                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? '#10B981' : '#EF4444' }}>
-                                                                    <i className={`fas ${paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'fa-check-circle' : 'fa-times-circle'}`} style={{ width: '16px', textAlign: 'center' }}></i>
-                                                                    {paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'COBRADO' : 'IMPAGO'}
-                                                                </span>
-                                                            </div>
+                                                            <div style={{ fontWeight: 'bold' }}>{e.resource.client_name}</div>
+                                                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{e.resource.service?.name}</div>
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td style={{ textAlign: 'center', width: '180px' }}>
+                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>
                                                     {e.isBlock ? (
-                                                        <button
-                                                            onClick={() => handleDeleteBlock(e.resource.id)}
-                                                            className="btn btn-danger btn-sm"
-                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}
-                                                        >
-                                                            Eliminar
-                                                        </button>
+                                                        <button onClick={() => handleDeleteBlock(e.resource.id)} className="btn btn-danger btn-sm">Eliminar</button>
                                                     ) : (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                        <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center' }}>
                                                             {e.resource.status === 'PENDING' && (
                                                                 <>
-                                                                    <div style={{ display: 'flex', gap: '0.3rem' }}>
-                                                                        <button
-                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
-                                                                            className="btn btn-danger btn-sm"
-                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
-                                                                        >
-                                                                            Rechazar
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')}
-                                                                            className="btn btn-primary btn-sm"
-                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#FBBF24', borderColor: '#FBBF24', color: '#000' }}
-                                                                        >
-                                                                            Confirmar
-                                                                        </button>
-                                                                    </div>
-                                                                    <div style={{ textAlign: 'right', marginTop: '-0.5rem' }}>
-                                                                        <i
-                                                                            onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
-                                                                            className="fas fa-trash"
-                                                                            style={{ fontSize: '0.8rem', color: 'rgba(239, 68, 68, 0.4)', cursor: 'pointer', padding: '0.4rem' }}
-                                                                            title="Eliminar permanentemente"
-                                                                            onMouseOver={e => e.target.style.color = 'var(--danger)'}
-                                                                            onMouseOut={e => e.target.style.color = 'rgba(239, 68, 68, 0.4)'}
-                                                                        ></i>
-                                                                    </div>
+                                                                    <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')} className="btn btn-danger btn-sm">Rechazar</button>
+                                                                    <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')} className="btn btn-primary btn-sm" style={{ backgroundColor: '#FBBF24', color: '#000' }}>Confirmar</button>
+                                                                    <button onClick={() => handleSendCustomMessage(e.id.replace('appt-', ''), 'RECORDAR')} className="btn btn-secondary btn-sm"><i className="fas fa-bell"></i></button>
                                                                 </>
                                                             )}
                                                             {e.resource.status === 'CONFIRMED' && (
                                                                 <>
-                                                                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.7rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid || false}
-                                                                            onChange={(ev) => setPaidStatus({ ...paidStatus, [e.id.replace('appt-', '')]: ev.target.checked })}
-                                                                        />
-                                                                        ¿Pagado?
-                                                                    </label>
-                                                                    <div style={{ display: 'flex', gap: '0.3rem' }}>
-                                                                        <button
-                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')}
-                                                                            className="btn btn-danger btn-sm"
-                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1 }}
-                                                                        >
-                                                                            Anular
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')}
-                                                                            className="btn btn-primary btn-sm"
-                                                                            style={{ fontSize: '0.7rem', padding: '0.3rem 0.5rem', flex: 1, backgroundColor: '#10B981', borderColor: '#10B981' }}
-                                                                        >
-                                                                            Cerrar
-                                                                        </button>
-                                                                    </div>
-                                                                    <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
-                                                                        <i
-                                                                            onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
-                                                                            className="fas fa-trash"
-                                                                            style={{ fontSize: '0.8rem', color: 'rgba(239, 68, 68, 0.4)', cursor: 'pointer', padding: '0.4rem' }}
-                                                                            title="Eliminar permanentemente"
-                                                                            onMouseOver={e => e.target.style.color = 'var(--danger)'}
-                                                                            onMouseOut={e => e.target.style.color = 'rgba(239, 68, 68, 0.4)'}
-                                                                        ></i>
-                                                                    </div>
+                                                                    <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')} className="btn btn-primary btn-sm" style={{ backgroundColor: '#10B981' }}>Cerrar</button>
+                                                                    <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')} className="btn btn-danger btn-sm">Anular</button>
+                                                                    <button onClick={() => handleSendCustomMessage(e.id.replace('appt-', ''), 'RECORDAR')} className="btn btn-secondary btn-sm"><i className="fas fa-bell"></i></button>
                                                                 </>
                                                             )}
                                                             {(e.resource.status === 'CANCELLED' || e.resource.status === 'FINISHED') && (
-                                                                <div style={{ textAlign: 'center' }}>
-                                                                    <i
-                                                                        onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))}
-                                                                        className="fas fa-trash"
-                                                                        style={{ fontSize: '1rem', color: 'rgba(239, 68, 68, 0.5)', cursor: 'pointer', padding: '0.5rem' }}
-                                                                        title="Eliminar permanentemente"
-                                                                        onMouseOver={e => e.target.style.color = 'var(--danger)'}
-                                                                        onMouseOut={e => e.target.style.color = 'rgba(239, 68, 68, 0.5)'}
-                                                                    ></i>
-                                                                </div>
+                                                                <button onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))} className="btn btn-secondary btn-sm"><i className="fas fa-trash"></i></button>
                                                             )}
                                                         </div>
                                                     )}
@@ -548,73 +398,46 @@ export default function AdminDashboard() {
                                 </table>
                             </div>
 
-                            {/* Mobile View: Cards */}
-                            <div className="mobile-only" style={{ flexDirection: 'column', gap: '1rem' }}>
+                            <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {dayAppointments.map(e => (
-                                    <div key={e.id} className="card" style={{ padding: '1rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
+                                    <div key={e.id} className="card" style={{ padding: '1rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                             <strong style={{ color: e.isBlock ? 'var(--danger)' : 'var(--primary)', fontSize: '1.2rem' }}>
                                                 {e.isBlock ? e.resource.start_time : format(e.start, 'HH:mm')}
                                             </strong>
-                                            {!e.isBlock && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                                    <span style={{
-                                                        fontSize: '0.6rem',
-                                                        padding: '3px 8px',
-                                                        borderRadius: '12px',
-                                                        background: e.resource.status === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.2)' :
-                                                            (e.resource.status === 'FINISHED' ? 'rgba(59, 130, 246, 0.2)' :
-                                                                (e.resource.status === 'PENDING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')),
-                                                        color: e.resource.status === 'CONFIRMED' ? '#34D399' :
-                                                            (e.resource.status === 'FINISHED' ? '#60A5FA' :
-                                                                (e.resource.status === 'PENDING' ? '#FBBF24' : '#F87171')),
-                                                        fontWeight: 'bold',
-                                                        border: '1px solid currentColor'
-                                                    }}>
-                                                        {e.resource.status}
-                                                    </span>
-                                                    <i
-                                                        onClick={(ev) => {
-                                                            ev.stopPropagation();
-                                                            handleDeleteAppointment(e.id.replace('appt-', ''))
-                                                        }}
-                                                        className="fas fa-trash"
-                                                        style={{ fontSize: '1rem', color: 'rgba(239, 68, 68, 0.5)', cursor: 'pointer', padding: '5px' }}
-                                                        title="Eliminar permanentemente"
-                                                    ></i>
-                                                </div>
+                                            <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{e.resource.status}</span>
+                                        </div>
+                                        <div style={{ marginBottom: '1rem' }}>
+                                            {e.isBlock ? (
+                                                <div style={{ color: 'var(--danger)' }}>BLOQUEO: {e.resource.reason}</div>
+                                            ) : (
+                                                <>
+                                                    <div style={{ fontWeight: 'bold' }}>{e.resource.client_name}</div>
+                                                    <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>{e.resource.service?.name}</div>
+                                                </>
                                             )}
                                         </div>
-
-                                        {e.isBlock ? (
-                                            <div style={{ marginBottom: '1rem' }}>
-                                                <div style={{ fontWeight: 'bold', color: 'var(--danger)' }}>BLOQUEO</div>
-                                                <div style={{ opacity: 0.8 }}>{e.resource.reason}</div>
-                                            </div>
-                                        ) : (
-                                            <div style={{ marginBottom: '1rem' }}>
-                                                <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.2rem' }}>{e.resource.client_name}</div>
-                                                <div style={{ fontSize: '0.9rem', color: '#aaa' }}>{e.resource.service?.name}</div>
-                                                <div style={{ fontSize: '0.9rem', marginTop: '0.3rem', color: paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? '#10B981' : '#EF4444' }}>
-                                                    {paidStatus[e.id.replace('appt-', '')] || e.resource.is_paid ? 'COBRADO' : 'IMPAGO'}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.4rem' }}>
                                             {e.isBlock ? (
-                                                <button onClick={() => handleDeleteBlock(e.resource.id)} className="btn btn-danger w-full">Eliminar</button>
+                                                <button onClick={() => handleDeleteBlock(e.resource.id)} className="btn btn-danger w-full btn-sm">Eliminar Bloqueo</button>
                                             ) : (
                                                 <>
                                                     {e.resource.status === 'PENDING' && (
                                                         <>
-                                                            <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')} className="btn btn-danger" style={{ flex: 1 }}>Rechazar</button>
-                                                            <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#FBBF24', color: '#000' }}>Confirmar</button>
+                                                            <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CANCELLED')} className="btn btn-danger btn-sm" style={{ flex: 1 }}>Rechazar</button>
+                                                            <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'CONFIRMED')} className="btn btn-primary btn-sm" style={{ flex: 1, backgroundColor: '#FBBF24', color: '#000' }}>Confirmar</button>
+                                                            <button onClick={() => handleSendCustomMessage(e.id.replace('appt-', ''), 'RECORDAR')} className="btn btn-secondary btn-sm"><i className="fas fa-bell"></i></button>
                                                         </>
                                                     )}
-                                                     {e.resource.status === 'CONFIRMED' && (
-                                                         <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')} className="btn btn-primary w-full" style={{ backgroundColor: '#10B981' }}>Cerrar Turno</button>
-                                                     )}
+                                                    {e.resource.status === 'CONFIRMED' && (
+                                                        <>
+                                                            <button onClick={() => handleUpdateStatus(e.id.replace('appt-', ''), 'FINISHED')} className="btn btn-primary btn-sm" style={{ flex: 1, backgroundColor: '#10B981' }}>Cerrar</button>
+                                                            <button onClick={() => handleSendCustomMessage(e.id.replace('appt-', ''), 'RECORDAR')} className="btn btn-secondary btn-sm"><i className="fas fa-bell"></i></button>
+                                                        </>
+                                                    )}
+                                                    {(e.resource.status === 'CANCELLED' || e.resource.status === 'FINISHED') && (
+                                                        <button onClick={() => handleDeleteAppointment(e.id.replace('appt-', ''))} className="btn btn-secondary btn-sm w-full"><i className="fas fa-trash"></i> Borrar</button>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
