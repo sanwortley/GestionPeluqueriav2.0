@@ -179,14 +179,24 @@ export default function ClientBooking() {
                 note: note,
                 turnstile_token: turnstileToken
             });
-            alert('Turno confirmado!');
-            // Reset to start
+            // Construir mensaje de WhatsApp
+            const appointmentDate = format(selectedDate, 'dd/MM/yyyy');
+            const message = `¡Hola! Reservé un turno en Roma Cabello:\n\n📅 *Fecha:* ${appointmentDate}\n⏰ *Hora:* ${selectedSlot.start_time} hs\n✂️ *Servicio:* ${selectedService.name}\n👤 *Nombre:* ${clientName}\n\n¡Nos vemos pronto!`;
+            
+            const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5493517552167';
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+            // Resetear estado
             setStep(1);
             setSelectedDate(null);
             setSelectedService(null);
             setSelectedSlot(null);
             setClientName('');
             setClientPhone('');
+            setNote('');
+
+            // Redirigir a WhatsApp
+            window.location.href = whatsappUrl;
         } catch (err) {
             alert('Error al reservar: ' + (err.response?.data?.detail || err.message));
         } finally {
