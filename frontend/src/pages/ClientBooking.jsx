@@ -179,9 +179,19 @@ export default function ClientBooking() {
                 note: note,
                 turnstile_token: turnstileToken
             });
-            // Construir mensaje de WhatsApp
+            // Construir mensaje de WhatsApp "Pro"
             const appointmentDate = format(selectedDate, 'dd/MM/yyyy');
-            const message = `¡Hola! Reservé un turno en Roma Cabello:\n\n📅 *Fecha:* ${appointmentDate}\n⏰ *Hora:* ${selectedSlot.start_time} hs\n✂️ *Servicio:* ${selectedService.name}\n👤 *Nombre:* ${clientName}\n\n¡Nos vemos pronto!`;
+            const message = 
+                `💈 *ROMA CABELLO - RESERVA* 💈\n` +
+                `---------------------------------------\n\n` +
+                `✅ *¡TURNO CONFIRMADO!*\n\n` +
+                `👤 *Cliente:* ${clientName}\n` +
+                `✂️ *Servicio:* ${selectedService.name}\n` +
+                `📅 *Fecha:* ${appointmentDate}\n` +
+                `⏰ *Hora:* ${selectedSlot.start_time} hs\n\n` +
+                `---------------------------------------\n` +
+                `_Enviado desde el sistema de reservas_\n` +
+                `_¡Nos vemos pronto en la barbería!_ ✂️🔥`;
             
             const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5493515427973';
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
