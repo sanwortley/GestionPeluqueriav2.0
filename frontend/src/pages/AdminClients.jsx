@@ -7,20 +7,50 @@ export default function AdminClients() {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const LIMIT = 50;
+
+    const [searchTerm, setSearchTerm] = useState('');
+
     useEffect(() => {
-        fetchClients();
+        fetchClients(0, true);
     }, []);
 
-    const fetchClients = async () => {
+    const fetchClients = async (skip = 0, isNew = false) => {
         try {
-            const res = await api.get('clients/');
-            setClients(res.data);
+            if (isNew) setLoading(true);
+            const res = await api.get(`clients/?skip=${skip}&limit=${LIMIT}&search=${searchTerm}`);
+            const newData = res.data;
+            
+            if (isNew) {
+                setClients(newData);
+            } else {
+                setClients(prev => [...prev, ...newData]);
+            }
+            
+            setHasMore(newData.length === LIMIT);
+            setPage(skip + LIMIT);
         } catch (err) {
             console.error("Error fetching clients", err);
         } finally {
             setLoading(false);
         }
     };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        setPage(0);
+        fetchClients(0, true);
+    };
+
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            fetchClients(page);
+        }
+    };
+
+
 
     const [editingClient, setEditingClient] = useState(null);
     const [editForm, setEditForm] = useState({ name: '', phone: '', email: '' });
@@ -61,8 +91,23 @@ export default function AdminClients() {
         <>
             <div className="container animate-fade-in">
             <h1 className="title" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Cartera de Clientes</h1>
+            
+            <form onSubmit={handleSearch} style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
+                    <input
+                        type="text"
+                        placeholder="Buscar cliente por nombre o teléfono..."
+                        className="input"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                    <button type="submit" className="btn btn-primary" disabled={loading}>Buscar</button>
+                    {searchTerm && (
+                        <button type="button" className="btn btn-secondary" onClick={() => { setSearchTerm(''); setPage(0); fetchClients(0, true); }}>Limpiar</button>
+                    )}
+            </form>
 
             <div className="card" style={{ padding: '0' }}>
+
                 <div className="table-wrapper">
                     <table>
                         <thead>
@@ -113,6 +158,18 @@ export default function AdminClients() {
                         </tbody>
                     </table>
                 </div>
+                {hasMore && clients.length > 0 && (
+                    <div style={{ padding: '1.5rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        <button 
+                            onClick={loadMore} 
+                            className="btn btn-secondary" 
+                            disabled={loading}
+                            style={{ padding: '0.6rem 2rem' }}
+                        >
+                            {loading ? 'Cargando...' : 'Cargar más clientes'}
+                        </button>
+                    </div>
+                )}
             </div>
             </div>
             {editingClient && (

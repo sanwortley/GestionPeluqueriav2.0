@@ -50,10 +50,20 @@ def get_appointments(
     from_date: Optional[date] = Query(None, alias="from"),
     to_date: Optional[date] = Query(None, alias="to"),
     date_eq: Optional[date] = Query(None, alias="date"),
+    search: Optional[str] = Query(None),
+    skip: int = Query(0),
+    limit: Optional[int] = Query(None),
     db: Session = Depends(get_db)
 ):
     query = db.query(Appointment).options(joinedload(Appointment.service), joinedload(Appointment.staff))
     
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (Appointment.client_name.ilike(search_filter)) | 
+            (Appointment.client_phone.ilike(search_filter))
+        )
+
     if date_eq:
         query = query.filter(Appointment.date == date_eq)
     else:
@@ -62,7 +72,15 @@ def get_appointments(
         if to_date:
             query = query.filter(Appointment.date <= to_date)
             
-    return query.order_by(Appointment.date, Appointment.start_time).all()
+    query = query.order_by(Appointment.date.desc(), Appointment.start_time.desc())
+    
+    if skip:
+        query = query.offset(skip)
+    if limit:
+        query = query.limit(limit)
+        
+    return query.all()
+
 
 @router.put("/{id}/cancel", response_model=AppointmentOut, dependencies=[Depends(get_current_admin)])
 def cancel_appointment(id: int, db: Session = Depends(get_db)):

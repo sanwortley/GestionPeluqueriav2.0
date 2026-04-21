@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import date
 from app.schemas.block import BlockCreate, BlockOut
 from app.models.block import Block
 from app.core.deps import get_db, get_current_admin
@@ -8,8 +9,18 @@ from app.core.deps import get_db, get_current_admin
 router = APIRouter()
 
 @router.get("/", response_model=List[BlockOut])
-def get_blocks(db: Session = Depends(get_db)):
-    return db.query(Block).all()
+def get_blocks(
+    from_date: Optional[date] = Query(None, alias="from"),
+    to_date: Optional[date] = Query(None, alias="to"),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Block)
+    if from_date:
+        query = query.filter(Block.start_date >= from_date)
+    if to_date:
+        query = query.filter(Block.end_date <= to_date)
+    return query.all()
+
 
 @router.post("/", response_model=BlockOut, dependencies=[Depends(get_current_admin)])
 def create_block(block_in: BlockCreate, db: Session = Depends(get_db)):

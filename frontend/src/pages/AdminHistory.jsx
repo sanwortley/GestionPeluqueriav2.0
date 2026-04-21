@@ -4,28 +4,45 @@ import api from '../api';
 
 export default function AdminHistory() {
     const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [query, setQuery] = useState('');
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const LIMIT = 50;
 
     useEffect(() => {
-        fetchAppointments();
+        fetchAppointments(0, true);
     }, []);
 
-    const fetchAppointments = async () => {
+    const fetchAppointments = async (skip = 0, isNewSearch = false) => {
         try {
             setLoading(true);
-            const res = await api.get('appointments/');
-            // Sort by date desc (Most recent first)
-            const sorted = res.data.sort((a, b) => {
-                const dateA = new Date(a.date + 'T' + a.start_time);
-                const dateB = new Date(b.date + 'T' + b.start_time);
-                return dateB - dateA;
-            });
-            setAppointments(sorted);
+            const res = await api.get(`appointments/?skip=${skip}&limit=${LIMIT}&search=${searchTerm}`);
+            const newData = res.data;
+            
+            if (isNewSearch) {
+                setAppointments(newData);
+            } else {
+                setAppointments(prev => [...prev, ...newData]);
+            }
+            
+            setHasMore(newData.length === LIMIT);
+            setPage(skip + LIMIT);
         } catch (err) {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        setPage(0);
+        fetchAppointments(0, true);
+    }
+
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            fetchAppointments(page);
         }
     };
 
@@ -66,7 +83,6 @@ export default function AdminHistory() {
             setAppointments(appointments.filter(a => a.id !== id));
 
             await api.delete(`appointments/${id}/`);
-            // fetchAppointments(); // Optional re-sync, but let's do it to be safe
         } catch (err) {
             // Rollback
             setAppointments(previousAppts);
@@ -75,30 +91,29 @@ export default function AdminHistory() {
         }
     };
 
-    const filteredAppointments = appointments.filter(a => {
-        const lowerQ = query.toLowerCase();
-        return (
-            a.client_name.toLowerCase().includes(lowerQ) ||
-            a.client_phone.includes(query) ||
-            (a.service?.name || '').toLowerCase().includes(lowerQ) ||
-            a.date.includes(query)
-        );
-    });
+    // We no longer need to filter in frontend for basic search, 
+    // but we can keep it if we want to filter the ALREADY loaded batch
+    const filteredAppointments = appointments;
 
     return (
         <div className="animate-fade-in">
             <h1 className="title">Historial de Turnos</h1>
 
             <div className="card">
-                <div style={{ marginBottom: '1rem' }}>
+                <form onSubmit={handleSearch} style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
                     <input
                         type="text"
-                        placeholder="Buscar por nombre, teléfono, servicio o fecha..."
+                        placeholder="Buscar por nombre, teléfono o servicio..."
                         className="input"
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
                     />
-                </div>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>Buscar</button>
+                    {searchTerm && (
+                        <button type="button" className="btn btn-secondary" onClick={() => { setSearchTerm(''); setPage(0); fetchAppointments(0, true); }}>Limpiar</button>
+                    )}
+                </form>
+
 
                 {loading ? (
                     <p>Cargando historial...</p>
@@ -214,6 +229,19 @@ export default function AdminHistory() {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {hasMore && appointments.length > 0 && (
+                    <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                        <button 
+                            onClick={loadMore} 
+                            className="btn btn-secondary" 
+                            disabled={loading}
+                            style={{ padding: '0.6rem 2rem' }}
+                        >
+                            {loading ? 'Cargando...' : 'Cargar más turnos'}
+                        </button>
                     </div>
                 )}
             </div>

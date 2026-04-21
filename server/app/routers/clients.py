@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.core.deps import get_db, get_current_admin
 from app.models.client import Client
 from app.schemas.client import Client as ClientSchema, ClientUpdate
@@ -19,11 +19,24 @@ def lookup_client_by_phone(phone: str, db: Session = Depends(get_db)):
     return client
 
 @router.get("/", response_model=List[ClientSchema], dependencies=[Depends(get_current_admin)])
-def get_clients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_clients(
+    skip: int = Query(0), 
+    limit: int = Query(100), 
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
     """
     Admin only: List all clients.
     """
-    return db.query(Client).order_by(Client.created_at.desc()).offset(skip).limit(limit).all()
+    query = db.query(Client)
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (Client.name.ilike(search_filter)) | 
+            (Client.phone.ilike(search_filter))
+        )
+    return query.order_by(Client.created_at.desc()).offset(skip).limit(limit).all()
+
 
 @router.put("/{client_id}", response_model=ClientSchema, dependencies=[Depends(get_current_admin)])
 def update_client(client_id: int, client_in: ClientUpdate, db: Session = Depends(get_db)):

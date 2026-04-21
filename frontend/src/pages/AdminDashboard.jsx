@@ -37,9 +37,12 @@ export default function AdminDashboard() {
 
     const fetchAllData = async () => {
         try {
+            const startRange = format(subMonths(currentDate, 1), 'yyyy-MM-dd');
+            const endRange = format(addMonths(currentDate, 1), 'yyyy-MM-dd');
+
             const [apptsRes, blocksRes] = await Promise.all([
-                api.get('appointments/'),
-                api.get('blocks/')
+                api.get(`appointments/?from=${startRange}&to=${endRange}`),
+                api.get(`blocks/?from=${startRange}&to=${endRange}`)
             ]);
 
             const apptEvents = apptsRes.data.map(appt => ({
@@ -59,6 +62,7 @@ export default function AdminDashboard() {
                 resource: block,
                 isBlock: true
             }));
+
 
             setAppointments([...apptEvents, ...blockEvents]);
             setBlocks(blocksRes.data);

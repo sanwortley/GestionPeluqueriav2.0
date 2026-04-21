@@ -8,11 +8,23 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+import time
+
+# Simple cache for WhatsApp status
+_wa_status_cache = {"data": None, "timestamp": 0}
+CACHE_TTL = 15  # seconds
+
 @router.get("/status", dependencies=[Depends(get_current_admin)])
 async def get_whatsapp_status():
     """
-    Checks the status of the WhatsApp bridge.
+    Checks the status of the WhatsApp bridge with a 15s cache.
     """
+    global _wa_status_cache
+    now = time.time()
+    
+    if _wa_status_cache["data"] and (now - _wa_status_cache["timestamp"] < CACHE_TTL):
+        return _wa_status_cache["data"]
+
     if not settings.WHATSAPP_BRIDGE_URL:
         raise HTTPException(status_code=503, detail="WhatsApp bridge URL not configured")
     
@@ -22,10 +34,16 @@ async def get_whatsapp_status():
             res = await client.get(f"{settings.WHATSAPP_BRIDGE_URL}/status", timeout=5.0)
             data = res.json()
             data["qrUrl"] = qr_url
+            
+            # Update cache
+            _wa_status_cache = {"data": data, "timestamp": now}
             return data
     except Exception as e:
         logger.error(f"Error checking bridge status: {str(e)}")
-        return {"isReady": False, "error": str(e), "qrUrl": qr_url}
+        error_data = {"isReady": False, "error": str(e), "qrUrl": qr_url}
+        # Don't cache errors for too long, but maybe a few seconds
+        return error_data
+
 
 @router.post("/logout", dependencies=[Depends(get_current_admin)])
 async def logout_whatsapp():
