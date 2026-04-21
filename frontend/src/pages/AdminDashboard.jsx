@@ -263,12 +263,13 @@ export default function AdminDashboard() {
                         onSelectSlot={handleSelectSlot}
                         onSelectEvent={(e) => {
                             handleSelectSlot({ start: e.start });
-                            if (view === 'month') setView('day');
                         }}
                         view={view}
                         onView={(v) => setView(v)}
                         dayPropGetter={dayPropGetter}
                         onNavigate={handleNavigate}
+                        getDrilldownView={() => null}
+                        onDrillDown={(date) => handleSelectSlot({ start: date })}
                         date={currentDate}
                         eventPropGetter={(event) => {
                             if (event.isBlock) {
