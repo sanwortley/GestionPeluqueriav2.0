@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addMonths, subMonths } from 'date-fns';
+import { format, parse, startOfWeek, getDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
 import api from '../api';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -16,6 +16,9 @@ const localizer = dateFnsLocalizer({
 
 export default function AdminDashboard() {
     const [appointments, setAppointments] = useState([]);
+    const [appointmentsByDate, setAppointmentsByDate] = useState({}); // { 'yyyy-MM-dd': [appt, ...] }
+    const [blockedDatesSet, setBlockedDatesSet] = useState(new Set()); // Set of 'yyyy-MM-dd' strings
+    
     const [selectedDate, setSelectedDate] = useState(null);
     const [dayAppointments, setDayAppointments] = useState([]);
     const [availabilityMap, setAvailabilityMap] = useState({});
@@ -31,51 +34,7 @@ export default function AdminDashboard() {
     const [view, setView] = useState('month');
     const [paidStatus, setPaidStatus] = useState({}); // { id: boolean }
 
-    useEffect(() => {
-        fetchAllData();
-    }, [currentDate]);
-
-    const fetchAllData = async () => {
-        try {
-            const startRange = format(subMonths(currentDate, 1), 'yyyy-MM-dd');
-            const endRange = format(addMonths(currentDate, 1), 'yyyy-MM-dd');
-
-            const [apptsRes, blocksRes] = await Promise.all([
-                api.get(`appointments/?from=${startRange}&to=${endRange}`),
-                api.get(`blocks/?from=${startRange}&to=${endRange}`)
-            ]);
-
-            const apptEvents = apptsRes.data.map(appt => ({
-                id: `appt-${appt.id}`,
-                title: `${appt.client_name} - ${appt.service?.name || "Servicio"}`,
-                start: new Date(appt.date + 'T' + appt.start_time),
-                end: new Date(appt.date + 'T' + appt.end_time),
-                resource: appt,
-                isBlock: false
-            }));
-
-            const blockEvents = blocksRes.data.map(block => ({
-                id: `block-${block.id}`,
-                title: `BLOQUEO: ${block.reason || 'S/M'}`,
-                start: new Date(block.start_date + 'T' + block.start_time),
-                end: new Date(block.end_date + 'T' + block.end_time),
-                resource: block,
-                isBlock: true
-            }));
-
-
-            setAppointments([...apptEvents, ...blockEvents]);
-            setBlocks(blocksRes.data);
-            if (selectedDate) {
-                refreshDayAppointments(selectedDate, [...apptEvents, ...blockEvents]);
-            }
-            fetchAvailabilityMonth(currentDate);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const fetchAvailabilityMonth = async (date) => {
+    const fetchAvailabilityMonth = useCallback(async (date) => {
         const start = format(subMonths(date, 1), 'yyyy-MM-dd');
         const end = format(addMonths(date, 1), 'yyyy-MM-dd');
         try {
@@ -88,15 +47,103 @@ export default function AdminDashboard() {
         } catch (e) {
             console.error(e);
         }
-    }
+    }, []);
 
-    const handleSelectSlot = async ({ start }) => {
-        setSelectedDate(start);
-        refreshDayAppointments(start, appointments);
+    const fetchAllData = useCallback(async () => {
+        try {
+            const startRange = format(subMonths(currentDate, 1), 'yyyy-MM-dd');
+            const endRange = format(addMonths(currentDate, 1), 'yyyy-MM-dd');
 
+            const [apptsRes, blocksRes] = await Promise.all([
+                api.get(`appointments/?from=${startRange}&to=${endRange}`),
+                api.get(`blocks/?from=${startRange}&to=${endRange}`)
+            ]);
+
+            // Indexing for performance
+            const apptIndex = {};
+            const apptEvents = apptsRes.data.map(appt => {
+                // Add to index
+                if (!apptIndex[appt.date]) apptIndex[appt.date] = [];
+                apptIndex[appt.date].push(appt);
+
+                return {
+                    id: `appt-${appt.id}`,
+                    title: `${appt.client_name} - ${appt.service?.name || "Servicio"}`,
+                    start: new Date(appt.date + 'T' + appt.start_time),
+                    end: new Date(appt.date + 'T' + appt.end_time),
+                    resource: appt,
+                    isBlock: false
+                };
+            });
+
+            const blockSet = new Set();
+            const blockEvents = blocksRes.data.map(block => {
+                // Approximate block indexing (only for start/end dates for now)
+                blockSet.add(block.start_date);
+                blockSet.add(block.end_date);
+                
+                return {
+                    id: `block-${block.id}`,
+                    title: `BLOQUEO: ${block.reason || 'S/M'}`,
+                    start: new Date(block.start_date + 'T' + block.start_time),
+                    end: new Date(block.end_date + 'T' + block.end_time),
+                    resource: block,
+                    isBlock: true
+                };
+            });
+
+            setAppointments([...apptEvents, ...blockEvents]);
+            setAppointmentsByDate(apptIndex);
+            setBlockedDatesSet(blockSet);
+            setBlocks(blocksRes.data);
+
+            if (selectedDate) {
+                const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                const dayEvts = (apptIndex[dateStr] || []).map(a => ({
+                    id: `appt-${a.id}`,
+                    start: new Date(a.date + 'T' + a.start_time),
+                    resource: a,
+                    isBlock: false
+                }));
+                // Combine with blocks that cover this date
+                const relevantBlocks = blockEvents.filter(be => {
+                    const dStr = format(selectedDate, 'yyyy-MM-dd');
+                    return dStr >= be.resource.start_date && dStr <= be.resource.end_date;
+                });
+                setDayAppointments([...dayEvts, ...relevantBlocks]);
+            }
+            fetchAvailabilityMonth(currentDate);
+        } catch (err) {
+            console.error(err);
+        }
+    }, [currentDate, selectedDate, fetchAvailabilityMonth]);
+
+    useEffect(() => {
+        fetchAllData();
+    }, [currentDate]);
+
+    const handleSelectSlot = useCallback(async ({ start }) => {
         const dateStr = format(start, 'yyyy-MM-dd');
-        const av = availabilityMap[dateStr];
+        setSelectedDate(start);
 
+        // Instant O(1) lookup
+        const dayAppts = (appointmentsByDate[dateStr] || []).map(a => ({
+            id: `appt-${a.id}`,
+            start: new Date(a.date + 'T' + a.start_time),
+            resource: a,
+            isBlock: false
+        }));
+
+        const dayBlocks = appointments.filter(e => {
+            if (e.isBlock) {
+                return dateStr >= e.resource.start_date && dateStr <= e.resource.end_date;
+            }
+            return false;
+        });
+
+        setDayAppointments([...dayAppts, ...dayBlocks]);
+
+        const av = availabilityMap[dateStr];
         if (av) {
             setEnabled(av.enabled);
             setSlotSize(av.slot_size_min);
@@ -110,24 +157,17 @@ export default function AdminDashboard() {
         if (window.innerWidth < 992) {
             const detailElement = document.getElementById('day-detail');
             if (detailElement) {
-                detailElement.scrollIntoView({ behavior: 'smooth' });
+                // Small delay to ensure render finished
+                setTimeout(() => {
+                    detailElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             }
         }
-    };
+    }, [appointments, appointmentsByDate, availabilityMap]);
 
-    const refreshDayAppointments = (date, allEvents) => {
-        const dateStr = format(date, 'yyyy-MM-dd');
-        const dayEvents = allEvents.filter(e => {
-            if (e.isBlock) {
-                const startStr = format(e.start, 'yyyy-MM-dd');
-                const endStr = format(e.end, 'yyyy-MM-dd');
-                return dateStr >= startStr && dateStr <= endStr;
-            } else {
-                return format(e.start, 'yyyy-MM-dd') === dateStr;
-            }
-        });
-        setDayAppointments(dayEvents);
-    }
+    // We no longer need refreshDayAppointments as a separate expensive function 
+    // since we do it inside handleSelectSlot or fetchAllData with the Map.
+
 
     const handleDeleteBlock = async (id) => {
         if (!confirm('¿Seguro que deseas eliminar este bloqueo?')) return;
@@ -217,7 +257,7 @@ export default function AdminDashboard() {
         setRanges(newRanges);
     };
 
-    const dayPropGetter = (date) => {
+    const dayPropGetter = useCallback((date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
         const av = availabilityMap[dateStr];
         const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateStr;
@@ -239,11 +279,17 @@ export default function AdminDashboard() {
             }
         }
         return { style };
-    }
+    }, [availabilityMap, selectedDate, blocks]);
 
-    const handleNavigate = (newDate) => {
+
+    const handleNavigate = useCallback((newDate) => {
         setCurrentDate(newDate);
-    }
+    }, []);
+
+    const handleViewChange = useCallback((v) => {
+        setView(v);
+    }, []);
+
 
     const minTime = new Date();
     minTime.setHours(8, 0, 0);
@@ -265,15 +311,14 @@ export default function AdminDashboard() {
                         endAccessor="end"
                         selectable
                         onSelectSlot={handleSelectSlot}
-                        onSelectEvent={(e) => {
-                            handleSelectSlot({ start: e.start });
-                        }}
+                        onSelectEvent={(e) => handleSelectSlot({ start: e.start })}
                         view={view}
-                        onView={(v) => setView(v)}
+                        onView={handleViewChange}
                         dayPropGetter={dayPropGetter}
                         onNavigate={handleNavigate}
                         getDrilldownView={() => null}
                         onDrillDown={(date) => handleSelectSlot({ start: date })}
+
                         date={currentDate}
                         eventPropGetter={(event) => {
                             if (event.isBlock) {
