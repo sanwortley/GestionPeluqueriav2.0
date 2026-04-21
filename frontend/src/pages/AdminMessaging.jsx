@@ -100,7 +100,20 @@ export default function AdminMessaging() {
                             <button onClick={fetchWhatsAppStatus} className="btn btn-secondary w-full">
                                 ACTUALIZAR ESTADO
                             </button>
+                            <button onClick={handleWhatsAppLogout} className="btn btn-secondary w-full" style={{ opacity: 0.6, fontSize: '0.8rem' }} disabled={waLoading}>
+                                🔄 GENERAR NUEVO QR (REINICIAR)
+                            </button>
                         </div>
+
+                        <div style={{ marginTop: '1.5rem', textAlign: 'left', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                             <p style={{ fontSize: '0.8rem', color: '#FBBF24', margin: 0, lineHeight: '1.4' }}>
+                                ⚠️ <strong>¿Problemas al vincular?</strong><br/>
+                                Si WhatsApp te tira error en el celular:<br/>
+                                1. Borrá dispositivos viejos vinculados en tu cuenta (máx. 4).<br/>
+                                2. Verificá tu conexión a internet.<br/>
+                                3. Si sigue fallando, tocá el botón de <strong>REINICIAR</strong> de arriba.
+                             </p>
+                         </div>
                     </div>
                 )}
             </div>
