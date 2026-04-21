@@ -519,8 +519,9 @@ table td {
 .rbc-agenda-view {
   background: var(--card-bg);
   border-radius: 8px;
-  overflow: hidden;
+  overflow: auto !important;
   border: 1px solid #333 !important;
+  -webkit-overflow-scrolling: touch;
 }
 
 .rbc-agenda-view table {
@@ -848,6 +849,24 @@ table td {
     font-size: 1.5rem !important;
     width: 100%;
     margin: 0.5rem 0 !important;
+  }
+
+  /* Agenda Mobile Optimizations */
+  .rbc-agenda-date-cell {
+    width: 100px !important;
+    padding: 1rem 0.5rem !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .rbc-agenda-time-cell {
+    width: 110px !important;
+    padding: 1rem 0.5rem !important;
+    font-size: 0.85rem !important;
+  }
+  
+  .rbc-agenda-event-cell {
+    padding: 1rem 0.5rem !important;
+    font-size: 0.85rem !important;
   }
 
   /* Client Days Grid - Keep 7 columns but scale down */
