@@ -6,6 +6,7 @@ const axios = require('axios');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const LOG_FILE = path.join(__dirname, 'bridge.log');
 const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB limit for log file
@@ -381,9 +382,67 @@ app.post('/logout', async (req, res) => {
     }
 });
 
-// Initial startup
-client = createClient();
+// --- Migración de sesión entre hostings (temporal) ---
+// Permite mover la carpeta "sessions" de un despliegue a otro sin re-escanear el QR.
+// Se desactiva sola: /admin/export-session no responde sin MIGRATION_TOKEN, y la
+// importación solo corre una vez (se salta si ya hay una sesión en el disco).
+const MIGRATION_TOKEN = process.env.MIGRATION_TOKEN || '';
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Bridge OK en puerto ${PORT}`);
+app.get('/admin/export-session', (req, res) => {
+    if (!MIGRATION_TOKEN || req.headers['x-migration-token'] !== MIGRATION_TOKEN) {
+        return res.status(404).end();
+    }
+    const sessionPath = path.join(__dirname, 'sessions');
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', 'attachment; filename="session-export.tar.gz"');
+    const tar = spawn('tar', ['-czf', '-', '-C', sessionPath, '.']);
+    tar.stdout.pipe(res);
+    tar.stderr.on('data', (d) => logToFile(`[EXPORT] tar stderr: ${d}`));
+    tar.on('error', (err) => {
+        logToFile(`[EXPORT] Error: ${err.message}`);
+        if (!res.headersSent) res.status(500).end();
+    });
 });
+
+async function maybeImportSession() {
+    const sessionPath = path.join(__dirname, 'sessions');
+    const importUrl = process.env.SESSION_IMPORT_URL;
+    const importToken = process.env.SESSION_IMPORT_TOKEN;
+    if (!importUrl || !importToken) return;
+
+    fs.mkdirSync(sessionPath, { recursive: true });
+    const hasExistingSession = fs.readdirSync(sessionPath).length > 0;
+    if (hasExistingSession) {
+        logToFile('[IMPORT] Ya existe una sesión en disco, se omite la importación.');
+        return;
+    }
+
+    logToFile(`[IMPORT] Descargando sesión desde ${importUrl}...`);
+    try {
+        const response = await axios.get(importUrl, {
+            headers: { 'x-migration-token': importToken },
+            responseType: 'stream'
+        });
+
+        await new Promise((resolve, reject) => {
+            const tar = spawn('tar', ['-xzf', '-', '-C', sessionPath]);
+            response.data.pipe(tar.stdin);
+            tar.on('close', (code) => code === 0 ? resolve() : reject(new Error(`tar exited with code ${code}`)));
+            tar.on('error', reject);
+        });
+
+        logToFile('[IMPORT] ✅ Sesión importada correctamente.');
+    } catch (err) {
+        logToFile(`[IMPORT] ❌ Error importando sesión: ${err.message}`);
+    }
+}
+
+// Initial startup
+(async () => {
+    await maybeImportSession();
+    client = createClient();
+
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Bridge OK en puerto ${PORT}`);
+    });
+})();
