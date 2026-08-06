@@ -89,7 +89,11 @@ function createClient() {
         authStrategy: new LocalAuth({
             dataPath: sessionPath
         }),
-        authTimeoutMs: 60000, 
+        authTimeoutMs: 60000,
+        // Sin esto, un QR sin escanear queda refrescándose para siempre y el mismo
+        // proceso de Chrome vive indefinidamente, acumulando memoria (causa del
+        // consumo excesivo de RAM). Al llegar al límite, "disconnected" recicla el cliente.
+        qrMaxRetries: 8,
 
         puppeteer: {
             headless: 'new',
@@ -137,6 +141,18 @@ function createClient() {
     newClient.on('auth_failure', (msg) => {
         logToFile(`❌ Error de Autenticación: ${msg}`);
         isReady = false;
+    });
+
+    // Se dispara cuando se supera qrMaxRetries (QR sin escanear) o hay una
+    // desconexión real. Reciclamos el cliente para liberar el Chrome viejo
+    // en vez de dejar el proceso muerto o creciendo en memoria sin límite.
+    newClient.on('disconnected', (reason) => {
+        logToFile(`⚠️ Cliente desconectado: ${reason}`);
+        isReady = false;
+        latestQR = null;
+        setTimeout(() => {
+            client = createClient();
+        }, 3000);
     });
 
     newClient.on('ready', () => {
