@@ -304,6 +304,7 @@ app.get('/status', (req, res) => {
 
     res.json({
         isReady: isReady,
+        qr: latestQR,
         hasQR: !!latestQR,
         sessionInfo: sInfo,
         queueLength: messageQueue.length,
@@ -350,12 +351,15 @@ app.get('/qr', async (req, res) => {
                 <p style="margin-top: 20px; color: #666; font-size: 0.9rem;">
                     ⚠️ Una vez vinculado, esta página se bloqueará automáticamente por seguridad.
                 </p>
+                <p style="color: #999; font-size: 0.85rem;">El código se actualiza solo antes de vencer, no hace falta recargar la página.</p>
                 <script>
+                    const currentQR = ${JSON.stringify(latestQR)};
                     setInterval(async () => {
                         try {
                             const r = await fetch('/status');
                             const d = await r.json();
-                            if (d.isReady) window.location.reload();
+                            // Recarga si ya se conectó, o si WhatsApp generó un QR nuevo (el anterior venció)
+                            if (d.isReady || (d.qr && d.qr !== currentQR)) window.location.reload();
                         } catch(e) {}
                     }, 3000);
                 </script>
