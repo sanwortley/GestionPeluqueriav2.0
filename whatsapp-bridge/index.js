@@ -113,7 +113,12 @@ function createClient() {
                 '--disable-extensions',
                 '--disable-sync',
                 '--metrics-recording-only',
-                '--js-flags="--max-old-space-size=512"' 
+                // Sin comillas: puppeteer pasa cada arg tal cual, y con comillas V8 ignoraba el límite
+                '--js-flags=--max-old-space-size=512',
+                // Menos procesos renderer de Chrome = menos RAM (Railway cobra por GB de RAM)
+                '--renderer-process-limit=2',
+                '--disable-features=site-per-process,Translate,OptimizationHints,MediaRouter',
+                '--disk-cache-size=33554432'
             ],
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined
         }
@@ -148,11 +153,7 @@ function createClient() {
     // en vez de dejar el proceso muerto o creciendo en memoria sin límite.
     newClient.on('disconnected', (reason) => {
         logToFile(`⚠️ Cliente desconectado: ${reason}`);
-        isReady = false;
-        latestQR = null;
-        setTimeout(() => {
-            client = createClient();
-        }, 3000);
+        recycleClient(newClient);
     });
 
     newClient.on('ready', () => {
@@ -194,12 +195,18 @@ function createClient() {
     // Initialization with retry logic to handle ProtocolErrors in containers
     const startWithRetry = async (attempts = 3) => {
         for (let i = 1; i <= attempts; i++) {
+            // El cliente fue reemplazado (reinicio diario / desconexión): no seguir reintentando
+            if (newClient.abandoned) return;
             try {
                 logToFile(`🚀 Intento de inicialización ${i}/${attempts}...`);
                 await newClient.initialize();
                 return;
             } catch (err) {
                 logToFile(`⚠️ Fallo en intento ${i}: ${err.message}`);
+                // Cerrar el Chrome del intento fallido; si no, el reintento choca con
+                // "browser is already running" y ese Chrome queda huérfano ocupando RAM
+                try { await newClient.destroy(); } catch (e) {}
+                if (newClient.abandoned) return;
                 if (i === attempts) {
                     logToFile('❌ No se pudo inicializar tras varios intentos.');
                 } else {
@@ -217,8 +224,39 @@ function createClient() {
     return newClient;
 }
 
-// Global client instance
-// (Client is already declared at the top and will be initialized at the bottom)
+// Cierra el Chrome del cliente dado (si sigue vivo) y levanta uno nuevo.
+// Antes, "disconnected" creaba un cliente nuevo sin cerrar el viejo, pudiendo
+// dejar procesos de Chrome huérfanos consumiendo RAM.
+let isRecycling = false;
+async function recycleClient(oldClient) {
+    if (isRecycling) return;
+    isRecycling = true;
+    isReady = false;
+    latestQR = null;
+    try {
+        oldClient.abandoned = true;
+        oldClient.removeAllListeners();
+        await oldClient.destroy();
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 3000));
+    client = createClient();
+    isRecycling = false;
+}
+
+// Reinicio diario del Chrome: WhatsApp Web acumula memoria mientras la pestaña
+// sigue abierta (la RAM subía de ~3 GB a ~4.8 GB en semanas). La sesión queda en
+// disco, así que no hace falta re-escanear el QR. 08:00 UTC = 05:00 Argentina.
+const DAILY_RECYCLE_HOUR_UTC = 8;
+let lastRecycleDay = null;
+setInterval(() => {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    if (now.getUTCHours() !== DAILY_RECYCLE_HOUR_UTC || lastRecycleDay === today) return;
+    if (!client || messageQueue.length > 0 || isProcessing) return;
+    lastRecycleDay = today;
+    logToFile('♻️ Reinicio diario del cliente para liberar memoria...');
+    recycleClient(client);
+}, 10 * 60 * 1000);
 
 // Redundant route removed (moved logic to the detailed one below)
 
