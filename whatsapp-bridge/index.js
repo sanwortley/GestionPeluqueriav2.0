@@ -141,6 +141,14 @@ function createClient() {
         // Authenticated means the session is loaded, but not yet fully synchronized
         latestQR = null;
         logToFile('📡 Autenticación exitosa (Sesión cargada)');
+        // A veces WhatsApp Web se autentica pero nunca dispara "ready" y el bridge
+        // queda trabado sin poder enviar (pasó el 19/10 tras el reinicio diario)
+        setTimeout(() => {
+            if (!isReady && !newClient.abandoned) {
+                logToFile('⏰ Autenticado pero sin "ready" tras 3 min. Reiniciando cliente...');
+                recycleClient(newClient);
+            }
+        }, 3 * 60 * 1000);
     });
 
     newClient.on('auth_failure', (msg) => {
@@ -208,7 +216,8 @@ function createClient() {
                 try { await newClient.destroy(); } catch (e) {}
                 if (newClient.abandoned) return;
                 if (i === attempts) {
-                    logToFile('❌ No se pudo inicializar tras varios intentos.');
+                    logToFile('❌ No se pudo inicializar tras varios intentos. Reintentando en 1 min...');
+                    setTimeout(() => recycleClient(newClient), 60 * 1000);
                 } else {
                     const wait = i * 3000;
                     logToFile(`⏳ Esperando ${wait/1000}s para reintentar...`);
