@@ -427,19 +427,38 @@ app.get('/qr', async (req, res) => {
     } catch (err) { res.status(500).send('Error'); }
 });
 
+// Pasa cualquier dígito Unicode (de ancho completo, árabe, etc.) a 0-9 y descarta el resto.
+// Algunos teclados o textos pegados producen dígitos que se ven iguales pero no son ASCII.
+function toAsciiDigits(str) {
+    let out = '';
+    for (const ch of String(str).normalize('NFKC')) {
+        if (ch >= '0' && ch <= '9') { out += ch; continue; }
+        if (!/\p{Nd}/u.test(ch)) continue;
+        // En Unicode cada serie de dígitos es contigua del 0 al 9: buscar dónde arranca su 0
+        const cp = ch.codePointAt(0);
+        let zero = cp;
+        while (cp - zero < 9 && /\p{Nd}/u.test(String.fromCodePoint(zero - 1))) zero--;
+        out += String(cp - zero);
+    }
+    return out;
+}
+
 // Vinculación por número: en el celular se ingresa un código de 8 caracteres en vez
 // de escanear el QR. Sirve cuando el panel se abre en el mismo teléfono a vincular.
 app.post('/pair', async (req, res) => {
     if (isReady) return res.status(400).json({ error: 'WhatsApp ya está vinculado.' });
-    const raw = String(req.body.phone || '');
-    let phone = raw.replace(/\D/g, '');
+    // El número llega por body y también por query (?p=), por si algo en el navegador vacía el body
+    const raw = String((req.body && req.body.phone) || req.query.p || '');
+    let phone = toAsciiDigits(raw);
     if (phone.startsWith('00')) phone = phone.substring(2);
     if (phone.startsWith('0')) phone = phone.substring(1);
     if (phone.length === 10) phone = '549' + phone;
     else if (phone.length === 12 && phone.startsWith('54') && phone[2] !== '9') phone = '549' + phone.substring(2);
     logToFile(`🔢 Pedido de código de vinculación. Recibido: ${JSON.stringify(raw)} → ${phone}`);
     if (!(phone.length === 13 && phone.startsWith('549'))) {
-        return res.status(400).json({ error: `Número inválido (recibí "${raw}", ${phone.length} dígitos). Tienen que ser 10 dígitos: código de área + número, ej: 3515427973` });
+        const codes = [...raw].map(c => c.codePointAt(0).toString(16)).join(' ');
+        logToFile(`🔢 Número rechazado. content-type=${req.headers['content-type']} body=${JSON.stringify(req.body)} query=${JSON.stringify(req.query)} codes=[${codes}]`);
+        return res.status(400).json({ error: `Número inválido (recibí "${raw}", ${phone.length} dígitos; diag: ${req.headers['content-type'] || 'sin tipo'} [${codes}]). Tienen que ser 10 dígitos: código de área + número, ej: 3515427973` });
     }
     if (!latestQR) return res.status(503).json({ error: 'WhatsApp todavía se está iniciando, probá en unos segundos.' });
 
@@ -486,8 +505,10 @@ app.get('/vincular', (req, res) => {
                 document.getElementById('err').textContent = '';
                 btn.disabled = true; btn.textContent = 'Generando...';
                 try {
-                    const r = await fetch('/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone: document.getElementById('phone').value.replace(/[^0-9]/g, '') }) });
+                    // Se manda tal cual (el servidor normaliza los dígitos), por body y por query
+                    const phone = document.getElementById('phone').value;
+                    const r = await fetch('/pair?p=' + encodeURIComponent(phone), { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: phone }) });
                     const d = await r.json();
                     if (!r.ok) throw new Error(d.error);
                     mostrar(d.code);
