@@ -39,6 +39,7 @@ const BACKEND_URL = process.env.BACKEND_WEBSITE_URL || 'http://127.0.0.1:8001'; 
 logToFile(`📡 [CONFIG] Backend URL set to: ${BACKEND_URL}`);
 let isReady = false;
 let latestQR = null;
+let latestPairingCode = null;
 
 let client;
 
@@ -133,6 +134,13 @@ function createClient() {
         console.log('También puedes verlo en /qr');
     });
 
+    // Código de vinculación por número (alternativa al QR, ver /vincular).
+    // WhatsApp lo renueva cada 3 min mientras no se use.
+    newClient.on('code', (code) => {
+        latestPairingCode = code;
+        logToFile(`🔢 Nuevo código de vinculación: ${code}`);
+    });
+
     newClient.on('loading_screen', (percent, message) => {
         logToFile(`[CARGA] ${percent}% - ${message}`);
     });
@@ -167,6 +175,7 @@ function createClient() {
     newClient.on('ready', () => {
         isReady = true;
         latestQR = null;
+        latestPairingCode = null;
         logToFile('✅ WhatsApp Bridge está listo y conectado!');
         logToFile(`📱 Info Sesión: ${JSON.stringify(newClient.info)}`);
     });
@@ -242,6 +251,7 @@ async function recycleClient(oldClient) {
     isRecycling = true;
     isReady = false;
     latestQR = null;
+    latestPairingCode = null;
     try {
         oldClient.abandoned = true;
         oldClient.removeAllListeners();
@@ -353,6 +363,7 @@ app.get('/status', (req, res) => {
         isReady: isReady,
         qr: latestQR,
         hasQR: !!latestQR,
+        pairingCode: latestPairingCode,
         sessionInfo: sInfo,
         queueLength: messageQueue.length,
         pendingMessages: messageQueue.map(m => ({ 
@@ -399,6 +410,7 @@ app.get('/qr', async (req, res) => {
                     ⚠️ Una vez vinculado, esta página se bloqueará automáticamente por seguridad.
                 </p>
                 <p style="color: #999; font-size: 0.85rem;">El código se actualiza solo antes de vencer, no hace falta recargar la página.</p>
+                <p style="margin-top: 25px;"><a href="/vincular" style="color:#10B981; font-weight:bold; font-size:1.1rem;">📱 ¿Estás en el mismo celular? Vincular con número de teléfono</a></p>
                 <script>
                     const currentQR = ${JSON.stringify(latestQR)};
                     setInterval(async () => {
@@ -413,6 +425,86 @@ app.get('/qr', async (req, res) => {
             </div>
         `);
     } catch (err) { res.status(500).send('Error'); }
+});
+
+// Vinculación por número: en el celular se ingresa un código de 8 caracteres en vez
+// de escanear el QR. Sirve cuando el panel se abre en el mismo teléfono a vincular.
+app.post('/pair', async (req, res) => {
+    if (isReady) return res.status(400).json({ error: 'WhatsApp ya está vinculado.' });
+    let phone = String(req.body.phone || '').replace(/\D/g, '');
+    if (phone.length === 10) phone = '549' + phone;
+    else if (phone.startsWith('54') && phone.length === 12 && phone[2] !== '9') phone = '549' + phone.substring(2);
+    if (phone.length < 11) return res.status(400).json({ error: 'Número inválido. Usá código de área + número, ej: 3515427973' });
+    if (!latestQR) return res.status(503).json({ error: 'WhatsApp todavía se está iniciando, probá en unos segundos.' });
+
+    try {
+        // Que el límite de QRs no recicle el cliente mientras se ingresa el código
+        client.options.qrMaxRetries = 0;
+        const code = await client.requestPairingCode(phone);
+        latestPairingCode = code;
+        logToFile(`🔢 Código de vinculación solicitado para ${phone}: ${code}`);
+        res.json({ code });
+    } catch (err) {
+        logToFile(`❌ Error pidiendo código de vinculación: ${err.message}`);
+        res.status(500).json({ error: 'No se pudo generar el código, probá de nuevo.' });
+    }
+});
+
+app.get('/vincular', (req, res) => {
+    if (isReady) return res.redirect('/qr');
+    res.send(`
+        <div style="text-align:center; font-family:sans-serif; padding:30px 16px; max-width:420px; margin:auto;">
+            <h1>Vincular con número</h1>
+            <p style="color:#666;">Escribí el número de WhatsApp del salón (con código de área, sin 0 ni 15).</p>
+            <input id="phone" type="tel" inputmode="numeric" placeholder="3515427973"
+                style="font-size:1.4rem; padding:12px; width:100%; box-sizing:border-box; border:1px solid #ccc; border-radius:10px; text-align:center;" />
+            <button id="btn" onclick="pedir()"
+                style="margin-top:12px; font-size:1.1rem; padding:14px; width:100%; border:0; border-radius:10px; background:#10B981; color:white; font-weight:bold;">
+                OBTENER CÓDIGO
+            </button>
+            <p id="err" style="color:#EF4444;"></p>
+            <div id="res" style="display:none; margin-top:20px;">
+                <div id="code" style="font-size:2.4rem; font-weight:bold; letter-spacing:6px; background:#f0f9f1; padding:18px; border-radius:12px;"></div>
+                <ol style="text-align:left; color:#444; line-height:1.6; margin-top:20px;">
+                    <li>Abrí <b>WhatsApp</b> en el celular.</li>
+                    <li>Andá a <b>Configuración → Dispositivos vinculados → Vincular un dispositivo</b>.</li>
+                    <li>Tocá <b>"Vincular con el número de teléfono"</b> (abajo de la cámara).</li>
+                    <li>Escribí el código de arriba.</li>
+                </ol>
+                <p style="color:#999; font-size:0.85rem;">También puede llegarte una notificación de WhatsApp para ingresarlo directo. El código vence a los 3 minutos; si vence, tocá el botón de nuevo.</p>
+            </div>
+        </div>
+        <script>
+            async function pedir() {
+                const btn = document.getElementById('btn');
+                document.getElementById('err').textContent = '';
+                btn.disabled = true; btn.textContent = 'Generando...';
+                try {
+                    const r = await fetch('/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: document.getElementById('phone').value }) });
+                    const d = await r.json();
+                    if (!r.ok) throw new Error(d.error);
+                    mostrar(d.code);
+                    document.getElementById('res').style.display = 'block';
+                } catch (e) {
+                    document.getElementById('err').textContent = e.message || 'Error, probá de nuevo.';
+                }
+                btn.disabled = false; btn.textContent = 'OBTENER CÓDIGO';
+            }
+            function mostrar(c) {
+                c = c || '';
+                document.getElementById('code').textContent = c.length === 8 ? c.slice(0,4) + '-' + c.slice(4) : c;
+            }
+            // Cuando se vincula, mostrar la pantalla de éxito; si WhatsApp renovó el código, actualizarlo
+            setInterval(async () => {
+                try {
+                    const d = await (await fetch('/status')).json();
+                    if (d.isReady) location.href = '/qr';
+                    else if (d.pairingCode && document.getElementById('res').style.display === 'block') mostrar(d.pairingCode);
+                } catch (e) {}
+            }, 3000);
+        </script>
+    `);
 });
 
 app.post('/logout', async (req, res) => {
