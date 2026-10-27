@@ -40,6 +40,8 @@ logToFile(`📡 [CONFIG] Backend URL set to: ${BACKEND_URL}`);
 let isReady = false;
 let latestQR = null;
 let latestPairingCode = null;
+let pairingPhone = null;   // número y cliente del último código pedido en /pair
+let pairingClient = null;
 
 let client;
 
@@ -462,16 +464,24 @@ app.post('/pair', async (req, res) => {
     }
     if (!latestQR) return res.status(503).json({ error: 'WhatsApp todavía se está iniciando, probá en unos segundos.' });
 
+    // Un segundo pedido para el mismo número falla en WhatsApp (p. ej. doble clic):
+    // si ya hay un código vigente para ese número, devolver ese mismo
+    if (latestPairingCode && pairingPhone === phone && client === pairingClient) {
+        return res.json({ code: latestPairingCode });
+    }
+
     try {
         // Que el límite de QRs no recicle el cliente mientras se ingresa el código
         client.options.qrMaxRetries = 0;
         const code = await client.requestPairingCode(phone);
         latestPairingCode = code;
+        pairingPhone = phone;
+        pairingClient = client;
         logToFile(`🔢 Código de vinculación solicitado para ${phone}: ${code}`);
         res.json({ code });
     } catch (err) {
         logToFile(`❌ Error pidiendo código de vinculación: ${err.message}`);
-        res.status(500).json({ error: 'No se pudo generar el código, probá de nuevo.' });
+        res.status(500).json({ error: `No se pudo generar el código, probá de nuevo en 1 minuto. (${err.message})` });
     }
 });
 
