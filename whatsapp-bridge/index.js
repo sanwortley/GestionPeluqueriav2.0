@@ -431,10 +431,16 @@ app.get('/qr', async (req, res) => {
 // de escanear el QR. Sirve cuando el panel se abre en el mismo teléfono a vincular.
 app.post('/pair', async (req, res) => {
     if (isReady) return res.status(400).json({ error: 'WhatsApp ya está vinculado.' });
-    let phone = String(req.body.phone || '').replace(/\D/g, '');
+    const raw = String(req.body.phone || '');
+    let phone = raw.replace(/\D/g, '');
+    if (phone.startsWith('00')) phone = phone.substring(2);
+    if (phone.startsWith('0')) phone = phone.substring(1);
     if (phone.length === 10) phone = '549' + phone;
-    else if (phone.startsWith('54') && phone.length === 12 && phone[2] !== '9') phone = '549' + phone.substring(2);
-    if (phone.length < 11) return res.status(400).json({ error: 'Número inválido. Usá código de área + número, ej: 3515427973' });
+    else if (phone.length === 12 && phone.startsWith('54') && phone[2] !== '9') phone = '549' + phone.substring(2);
+    logToFile(`🔢 Pedido de código de vinculación. Recibido: ${JSON.stringify(raw)} → ${phone}`);
+    if (!(phone.length === 13 && phone.startsWith('549'))) {
+        return res.status(400).json({ error: `Número inválido (recibí "${raw}", ${phone.length} dígitos). Tienen que ser 10 dígitos: código de área + número, ej: 3515427973` });
+    }
     if (!latestQR) return res.status(503).json({ error: 'WhatsApp todavía se está iniciando, probá en unos segundos.' });
 
     try {
@@ -481,7 +487,7 @@ app.get('/vincular', (req, res) => {
                 btn.disabled = true; btn.textContent = 'Generando...';
                 try {
                     const r = await fetch('/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone: document.getElementById('phone').value }) });
+                        body: JSON.stringify({ phone: document.getElementById('phone').value.replace(/[^0-9]/g, '') }) });
                     const d = await r.json();
                     if (!r.ok) throw new Error(d.error);
                     mostrar(d.code);
@@ -491,6 +497,10 @@ app.get('/vincular', (req, res) => {
                 }
                 btn.disabled = false; btn.textContent = 'OBTENER CÓDIGO';
             }
+            // Un error viejo no debe quedar en pantalla después de corregir el número
+            document.getElementById('phone').addEventListener('input', () => {
+                document.getElementById('err').textContent = '';
+            });
             function mostrar(c) {
                 c = c || '';
                 document.getElementById('code').textContent = c.length === 8 ? c.slice(0,4) + '-' + c.slice(4) : c;
