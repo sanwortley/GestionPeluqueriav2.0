@@ -519,6 +519,7 @@ app.post('/logout', async (req, res) => {
         
         isReady = false;
         latestQR = null;
+        latestPairingCode = null;
 
         const sessionPath = path.join(__dirname, 'sessions');
         if (fs.existsSync(sessionPath)) {
