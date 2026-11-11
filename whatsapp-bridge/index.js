@@ -42,6 +42,7 @@ let latestQR = null;
 let latestPairingCode = null;
 let pairingPhone = null;   // número y cliente del último código pedido en /pair
 let pairingClient = null;
+let pairInFlight = null;   // { phone, promise } del pedido de código en curso
 
 let client;
 
@@ -254,6 +255,7 @@ async function recycleClient(oldClient) {
     isReady = false;
     latestQR = null;
     latestPairingCode = null;
+    pairInFlight = null;
     try {
         oldClient.abandoned = true;
         oldClient.removeAllListeners();
@@ -470,18 +472,41 @@ app.post('/pair', async (req, res) => {
         return res.json({ code: latestPairingCode });
     }
 
-    try {
+    // Un solo pedido a la vez: varios pedidos superpuestos dejan a WhatsApp Web colgado
+    if (pairInFlight && pairInFlight.phone !== phone) {
+        return res.status(409).json({ error: 'Ya se está generando un código para otro número, esperá un minuto.' });
+    }
+    if (!pairInFlight) {
         // Que el límite de QRs no recicle el cliente mientras se ingresa el código
         client.options.qrMaxRetries = 0;
-        const code = await client.requestPairingCode(phone);
-        latestPairingCode = code;
-        pairingPhone = phone;
-        pairingClient = client;
-        logToFile(`🔢 Código de vinculación solicitado para ${phone}: ${code}`);
+        const c = client;
+        const promise = c.requestPairingCode(phone)
+            .then(code => {
+                latestPairingCode = code;
+                pairingPhone = phone;
+                pairingClient = c;
+                logToFile(`🔢 Código de vinculación solicitado para ${phone}: ${code}`);
+                return code;
+            })
+            .finally(() => { if (pairInFlight && pairInFlight.promise === promise) pairInFlight = null; });
+        promise.catch(err => logToFile(`❌ Error pidiendo código de vinculación: ${err.message}`));
+        pairInFlight = { phone, promise };
+    }
+
+    try {
+        // WhatsApp a veces no responde nunca (p. ej. tras muchos pedidos para el mismo número);
+        // sin este límite la página quedaba "Generando..." 3 minutos hasta el timeout de puppeteer
+        const code = await Promise.race([
+            pairInFlight.promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('PAIR_TIMEOUT')), 45000))
+        ]);
         res.json({ code });
     } catch (err) {
-        logToFile(`❌ Error pidiendo código de vinculación: ${err.message}`);
-        res.status(500).json({ error: `No se pudo generar el código, probá de nuevo en 1 minuto. (${err.message})` });
+        if (err.message === 'PAIR_TIMEOUT') {
+            logToFile('⏰ WhatsApp no respondió el pedido de código en 45s');
+            return res.status(504).json({ error: 'WhatsApp no respondió el pedido de código. Pasa cuando se pidieron varios códigos seguidos para el mismo número. Vinculá escaneando el QR desde la compu, o probá con el código en un par de horas.' });
+        }
+        res.status(500).json({ error: `No se pudo generar el código. Vinculá escaneando el QR, o probá de nuevo en un rato. (${err.message})` });
     }
 });
 
@@ -491,7 +516,7 @@ app.get('/vincular', (req, res) => {
         <div style="text-align:center; font-family:sans-serif; padding:30px 16px; max-width:420px; margin:auto;">
             <h1>Vincular con número</h1>
             <p style="color:#666;">Escribí el número de WhatsApp del salón (con código de área, sin 0 ni 15).</p>
-            <input id="phone" type="tel" inputmode="numeric" placeholder="3515427973"
+            <input id="phone" type="tel" inputmode="numeric" placeholder="3515427973" autocomplete="off"
                 style="font-size:1.4rem; padding:12px; width:100%; box-sizing:border-box; border:1px solid #ccc; border-radius:10px; text-align:center;" />
             <button id="btn" onclick="pedir()"
                 style="margin-top:12px; font-size:1.1rem; padding:14px; width:100%; border:0; border-radius:10px; background:#10B981; color:white; font-weight:bold;">
@@ -513,7 +538,12 @@ app.get('/vincular', (req, res) => {
             async function pedir() {
                 const btn = document.getElementById('btn');
                 document.getElementById('err').textContent = '';
-                btn.disabled = true; btn.textContent = 'Generando...';
+                // La sugerencia de autocompletar de Chrome se ve dentro del campo pero no lo llena
+                if (!document.getElementById('phone').value.trim()) {
+                    document.getElementById('err').textContent = 'El campo está vacío: escribí el número a mano (si Chrome lo sugiere en gris, no alcanza con verlo, hay que escribirlo).';
+                    return;
+                }
+                btn.disabled = true; btn.textContent = 'Generando... (puede tardar hasta 45 segundos)';
                 try {
                     // Se manda tal cual (el servidor normaliza los dígitos), por body y por query
                     const phone = document.getElementById('phone').value;
@@ -561,6 +591,7 @@ app.post('/logout', async (req, res) => {
         isReady = false;
         latestQR = null;
         latestPairingCode = null;
+        pairInFlight = null;
 
         const sessionPath = path.join(__dirname, 'sessions');
         if (fs.existsSync(sessionPath)) {
